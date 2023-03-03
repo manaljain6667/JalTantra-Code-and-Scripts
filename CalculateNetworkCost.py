@@ -761,11 +761,13 @@ class AutoExecutorSettings:
     def __update_solver_dict(self):
         # NOTE: Update `AutoExecutorSettings.AVAILABLE_SOLVERS` if keys in below dictionary are updated
         # NOTE: Use double quotes ONLY in the below variables
+        timeoption=self.r_execution_time_limit-30
+        print(timeoption)
         self.solvers = {
             'baron': SolverOutputAnalyzerBaron(
                 engine_path='./ampl.linux-intel64/baron',
                 engine_options=f'option baron_options "threads={self.r_cpu_cores_per_solver} '
-                               f'barstats keepsol lsolmsg outlev=1 prfreq=100 prtime=2 maxtime=270 problem ";',
+                               f'barstats keepsol lsolmsg outlev=1 prfreq=100 prtime=2 maxtime={timeoption} problem ";',
                 threads=self.r_cpu_cores_per_solver
             ),
             'octeract': SolverOutputAnalyzerOcteract(
@@ -789,11 +791,12 @@ class AutoExecutorSettings:
         self.r_cpu_cores_per_solver = n
         self.__update_solver_dict()
 
-    def set_data_file_path(self, data_file_path: str) -> None:
+    def set_data_file_path(self, data_file_path: str, prefix: str) -> None:
         self.data_file_path = data_file_path
         self.data_file_hash = file_hash_sha256(data_file_path)
         self.output_dir_level_1_network_specific = f'{AutoExecutorSettings.OUTPUT_DIR_LEVEL_0}' \
                                                    f'/{self.data_file_hash}'
+        self.output_dir_level_1_network_specific = self.output_dir_level_1_network_specific+prefix
         self.output_network_specific_result = self.output_dir_level_1_network_specific + '/0_result.txt'
         self.output_result_summary_file = self.output_dir_level_1_network_specific + '/0_result_summary.txt'
 
@@ -1456,7 +1459,7 @@ def update_settings(args: argparse.Namespace) -> AutoExecutorSettings:
         g_logger.error(f"Cannot access '{args.path}': No such file or directory")
         exit(2)
     g_logger.info(f"Current working directory = '{os.getcwd()}'")
-    my_settings.set_data_file_path(args.path)
+    my_settings.set_data_file_path(args.path, args.prefix)
     g_logger.info(f"Graph/Network (i.e. Data/Testcase file) = '{my_settings.data_file_path}'")
     g_logger.info(f"Input file hash = '{my_settings.data_file_hash}'")
 
@@ -1666,6 +1669,14 @@ def parse_args() -> argparse.Namespace:
                            default=300,
                            help='Number of seconds a solver can execute [default: 00:05:00 = 5 min = 300 seconds]'
                                 '\nRequirement: N >= 30 seconds')
+
+    my_parser.add_argument('--prefix',
+                           metavar='Xmin',
+                           action='store',
+                           # REFER: https://stackoverflow.com/questions/18700634/python-argparse-integer-condition-12
+                           type=str,
+                           default='5min',
+                           help='prefix added to the file hash path')
 
     my_parser.add_argument('--threads-per-solver-instance',
                            metavar='N',
