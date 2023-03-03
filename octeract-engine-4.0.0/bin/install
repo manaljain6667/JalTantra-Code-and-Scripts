@@ -1,0 +1,57 @@
+#!/usr/bin/env bash
+
+# output colours
+_ANSI_R='\033[1;31m'
+_ANSI_G='\033[1;32m'
+_ANSI_B='\033[1;36m'
+_ANSI_P='\033[1;35m'
+_ANSI_NC='\033[0m'
+
+# Do configuration?
+echo -e "${_ANSI_G}Octeract Engine has been extracted.${_ANSI_NC}"
+echo -e "${_ANSI_B}Automatically configure the installation? (requires administrator access) [Y/n]${_ANSI_NC}"
+read -e -p " -> " -n 1 -r
+if ! [[ $REPLY =~ ^[Yy]$ ]] && ! [[ -z "$REPLY" ]]; then
+  echo -e "${_ANSI_G}Install complete!${_ANSI_NC}"
+  exit 0
+fi
+
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+if [[ "$(basename "${SCRIPT_DIR}")" != "bin" ]]; then
+    echo -e "${_ANSI_R}This installer is meant to be run from the /bin folder of the Octeract Engine distribution${_ANSI_NC}"
+    exit 1
+fi
+LIBRARY_DIR="$(realpath "${SCRIPT_DIR}/../lib")"
+
+echo -e "${_ANSI_B}[!] This installer can fully configure Octeract Engine for use from \`bash\` and \`zsh\` shells${_ANSI_NC}"
+echo -e "${_ANSI_B}For any other shell, follow the equivalent steps as displayed in this output${_ANSI_NC}"
+
+# for bash shells
+echo -e "${_ANSI_G}Exporting ${SCRIPT_DIR} to PATH in \`~/.profile\` for bash shells${_ANSI_NC}"
+echo -e "export PATH=\"\${PATH}:${SCRIPT_DIR}\"" >> ~/.profile
+
+# for zsh shells
+echo -e "${_ANSI_G}Exporting ${SCRIPT_DIR} to PATH in \`~/.zprofile\` for zsh shells${_ANSI_NC}"
+echo -e "export PATH=\"\${PATH}:${SCRIPT_DIR}\"" >> ~/.zprofile
+
+# install for Python?
+echo -e "${_ANSI_B}Install for use from Python? [Y/n]${_ANSI_NC}"
+read -e -p " -> " -n 1 -r
+if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z "$REPLY" ]]; then
+  echo -e "${_ANSI_G}Exporting ${LIBRARY_DIR} to PYTHONPATH in \`~/.profile\` for bash shells${_ANSI_NC}"
+  echo -e "export PYTHONPATH=\"\${PYTHONPATH}:${LIBRARY_DIR}\"" >> ~/.profile
+
+  echo -e "${_ANSI_G}Exporting ${LIBRARY_DIR} to PYTHONPATH in \`~/.zprofile\` for zsh shells${_ANSI_NC}"
+  echo -e "export PYTHONPATH=\"\${PYTHONPATH}:${LIBRARY_DIR}\"" >> ~/.zprofile
+fi
+
+# install for GAMS?
+echo -e "${_ANSI_B}Install for use from GAMS? (GAMS must already be installed) [Y/n]${_ANSI_NC}"
+read -e -p " -> " -n 1 -r
+if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z "$REPLY" ]]; then
+  ${SCRIPT_DIR}/octeract-install-for-gams
+fi
+
+echo -e "${_ANSI_G}Install complete!${_ANSI_NC}"
+echo -e "${_ANSI_R}Log out and then log in to finalise the installation OR"
+echo -e "${_ANSI_R}\`source ~/.profile\` for bash shells OR \`source ~/.zprofile\` for zsh shells${_ANSI_NC}"

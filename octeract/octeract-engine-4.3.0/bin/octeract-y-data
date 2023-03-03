@@ -1,0 +1,22 @@
+solverConfig:
+- octeract:
+    fileType: 111
+    dictType: 0
+    licCodes: 000102030405
+    defaultOkFlag: True
+    hiddenFlag: False
+    scriptName: @OCTERACT_GAMS_BRIDGE_SCRIPT@
+    executableName:
+    library:
+      libName: @OCTERACT_MAIN_LIBRARY_PATH@
+      auditCode: oct
+      solverInterfaceType: 1
+      threadSafeIndic: False
+    modelTypes:
+    - MIQCP
+    - MINLP
+    - NLP
+    - RMINLP
+    - DNLP
+    - QCP
+    - RMIQCP

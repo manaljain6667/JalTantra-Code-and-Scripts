@@ -1,0 +1,51 @@
+model "test - NL version"
+ uses "nlsolv"
+
+ parameters
+   SOLVER="octeract-engine"
+   SOLVERPATH=""
+   SOLVEROPTIONS=""
+ end-parameters
+
+ declarations
+   RN = 1..5
+   x: array(RN) of mpvar        ! Decision variables
+   Obj: nlctr                   ! Objective function
+   Con: nlctr                   ! Constraint function
+ end-declarations
+
+ forall(i in RN) x(i) is_free
+
+ ! Variable bounds
+ forall(i in RN) x(i) >= 0
+ forall(i in RN) x(i) <= 1
+
+! Objective
+ Obj:= 42*x(1) - 0.5*(100*x(1)*x(1) + 100*x(2)*x(2) + 100*x(3)*x(3) + 100*x(4)*x(4) + 100*x(5)*x(5)) + 44*x(2) + 45*x(3) + 47*x(4) + 47.5*x(5)
+
+! Constraint
+ Con:= 20*x(1) + 12*x(2) + 11*x(3) + 7*x(4) + 4*x(5) <= 40
+
+! Configuration of the solver
+ setparam("nl_verbose", true)
+ setparam("nl_solver", SOLVER)
+ if SOLVERPATH<>"" then
+   setparam("nl_solverpath", SOLVERPATH)
+ end-if
+ if SOLVEROPTIONS<>"" then
+   setparam("nl_options", SOLVEROPTIONS)
+ end-if
+
+! Solve the problem
+ minimise(Obj)
+
+! Solution reporting
+ if getprobstat<>NL_OPT and getprobstat<>NL_UNF then
+   writeln("No solution available. Solver status: ", getparam("NL_STATUS"))
+ else
+   writeln("Solution: ", getobjval)
+   forall(j in RN)
+     writeln(strfmt(getsol(x(j)),10,5))
+ end-if
+
+end-model

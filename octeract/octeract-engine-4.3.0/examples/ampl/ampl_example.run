@@ -1,0 +1,14 @@
+# Load the model file
+model "model.mod";
+
+# Set the solver to the Octeract solver
+option solver "octeract-engine";
+#option octeract_options 'num_cores=8'; # Use 8 cores
+
+# Solve the problem
+solve;
+
+# Display the results (objective value and solution vector)
+display {oct_obj in 1.._nobjs} (_objname[oct_obj], _obj[oct_obj]);
+display {oct_var in 1.._nvars} (_varname[oct_var], _var[oct_var], _var[oct_var].lb, _var[oct_var].ub, _var[oct_var].rc);
+

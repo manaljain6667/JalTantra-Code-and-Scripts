@@ -1,0 +1,102 @@
+/*
+**
+**  Octeract software uses third-party open-source libraries. 
+**
+**  For each library, the following are provided: 
+**    1. The url where you can download the source code, and compile the shared library. 
+**    2. The text file (located in this folder) where you can find their license details. 
+**
+*/
+
+
+SYMENGINE
+--------------------------------------------------------------------------------------------------------
+Octeract includes the SymEngine library obtainable from their github repository: 
+
+    https://github.com/symengine/symengine
+
+Their license agreement details can be found in SYMENGINE_LICENSE.txt
+--------------------------------------------------------------------------------------------------------
+
+
+FILIB++
+--------------------------------------------------------------------------------------------------------
+Octeract includes the FILIB++ library obtainable from their website:
+
+    http://www2.math.uni-wuppertal.de/wrswt/software/filib.html
+    
+Their license agreement falls under the LGPL agreement - the details can be found in FILIB_LICENSE.txt
+--------------------------------------------------------------------------------------------------------
+
+BLCR
+--------------------------------------------------------------------------------------------------------
+Octeract includes the BLCR library obtainable from their website:
+
+    https://crd.lbl.gov/departments/computer-science/CLaSS/research/BLCR/
+
+Their license agreement falls under the LGPL agreement - the details can be found in BLCR_LICENSE.txt
+--------------------------------------------------------------------------------------------------------
+
+
+QUADMATH
+--------------------------------------------------------------------------------------------------------
+Octeract includes the QUADMATH library obtainable as part of the gcc package: 
+    
+    https://gcc.gnu.org/releases.html
+
+Their license agreement falls under the LGPL agreement - the details can be found in QUADMATH_LICENSE.txt
+--------------------------------------------------------------------------------------------------------
+
+
+MPICH 
+--------------------------------------------------------------------------------------------------------
+Octeract includes the MPFR library obtainable from their website: 
+
+    https://www.mpich.org/
+
+Their license agreement details can be found in MPICH_LICENSE.txt
+--------------------------------------------------------------------------------------------------------
+
+
+BOOST 
+--------------------------------------------------------------------------------------------------------
+Octeract includes the Boost C++ library obtainable from their website: 
+
+    https://www.boost.org/
+
+Their license agreement details can be found in BOOST_LICENSE.txt
+--------------------------------------------------------------------------------------------------------
+
+
+COIN-OR 
+--------------------------------------------------------------------------------------------------------
+Octeract includes several coin-or libraries, including ipopt, cbc, clp and osilp, all of which 
+are obtainable from the COIN-OR github repository: 
+
+    https://github.com/coin-or/
+
+These libraries are released under the Eclipse Public License (EPL), the details of which can be found 
+in ECLIPSE_PUBLIC_LICENSE.txt
+--------------------------------------------------------------------------------------------------------
+
+
+PYTHON 3
+--------------------------------------------------------------------------------------------------------
+Octeract includes the python 3 libraries, obtainable from:
+
+    https://www.python.org/downloads/source/
+
+Their license agreement fall under the PSF LICENSE AGREEMENT, the details of which can be found in 
+PYTHON_LICENSE.txt
+--------------------------------------------------------------------------------------------------------
+
+
+CURL
+--------------------------------------------------------------------------------------------------------
+Octeract includes the Curl libraries, obtainable from:
+
+    https://curl.se/libcurl/
+
+Their license agreement fall under the curl license, the details of which can be found in 
+CURL_LICENSE.txt
+--------------------------------------------------------------------------------------------------------

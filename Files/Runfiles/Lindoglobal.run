@@ -1,0 +1,4 @@
+option lindoglobal_options "threads=4 maxtime=300";
+solve;
+display {i in nodes} h[i];
+display {(i,j) in arcs} q[i,j]  
