@@ -33,8 +33,8 @@ bnd = sum(src,D(src));
 q_M=-bnd;
 qm=bnd;
 
-Variable l(nodes,j,pipes); 
-l.lo(nodes,j,pipes)= EPS;
+Variable l(nodes,j,pipes);
+l.lo(nodes,j,pipes)= 0;
 
 Variable q(nodes,j);
 q.lo(nodes,j)=qm;
@@ -45,18 +45,13 @@ Variables z;
 Variable h(nodes);
 
 Equations cost "objective function",bound1(nodes,j,pipes),cons1(nodes),cons2(nodes),cons3(nodes,j),cons5(src), cons4(nodes,j) ;
-
 cost..  z=e=sum(arcs(nodes,j),sum(pipes,l(arcs,pipes)*c(pipes)));
-
 bound1(nodes,j,pipes)$arcs(nodes,j).. l(nodes,j,pipes) =l= Len(nodes,j);
 cons1(nodes).. sum(arcs(j,nodes),q(arcs)) =e= sum(arcs(nodes,j),q(arcs)) + D(nodes);
 cons2(nodes).. h(nodes) =g= E(nodes) + P(nodes);
 cons3(arcs(nodes,j)).. h(nodes)-h(j)=e=sum(pipes,((q(arcs)*(abs(q(arcs))**0.852))*(0.001**1.852)*omega*l(arcs,pipes)/((R(pipes)**1.852)*(dis(pipes)/1000)**4.87)));
 cons4(arcs(nodes,j)).. sum(pipes,l(arcs,pipes)) =e=Len(arcs);
 cons5(src)..  h(src)=e= sum(srcs,E(srcs));
- 
+
 model m1  /all/  ;
 solve m1 using minlp minimizing z ;
-
-
-

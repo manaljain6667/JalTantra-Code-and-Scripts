@@ -1,0 +1,265 @@
+52
+11 74 0 0 423  0.00000000000000E+0000 5  0.00000000000000E+0000 0 0
+1663 202 0 0 1459 277 73 1313 0 0 0 0
+1488 1414 0 0 0 0 0 0
+5933 1616
+1488 0 0 0 0 0 0 0 0 1488
+0 0 0 0 0 0 0
+0 5 0
+16363 31 20
+ 1.00000000000000E-0004  0.00000000000000E+0000 0
+0  0.00000000000000E+0000 0  0.00000000000000E+0000
+ 2.70000000000000E+0002 2147483647 0
+11 0
+ 0.00000000000000E+0000 0 0 0  1.00000000000000E+0000 0 1 0 0  1.00000000000000E-0005 0
+1415 100
+0 0 0 0 0
+ 0.00000000000000E+0000  0.00000000000000E+0000  0.00000000000000E+0000  0.00000000000000E+0000  0.00000000000000E+0000
+/home/manal/Downloads/MTP/JalTantra-Code-and-Scripts/225b/gamsmatr.dat
+/home/manal/Downloads/MTP/JalTantra-Code-and-Scripts/225b/gamsinst.dat
+/home/manal/Downloads/MTP/JalTantra-Code-and-Scripts/alphaecp.opt
+/home/manal/Downloads/MTP/JalTantra-Code-and-Scripts/225b/gamsstat.dat
+/home/manal/Downloads/MTP/JalTantra-Code-and-Scripts/225b/gamssolu.dat
+
+/home/manal/Downloads/MTP/JalTantra-Code-and-Scripts/225b/gamsdict.dat
+3
+22:38:24
+03/08/23
+/home/manal/Downloads/MTP/JalTantra-Code-and-Scripts/
+/opt/gams/gams42.3_linux_x64_64_sfx/
+/home/manal/Downloads/MTP/JalTantra-Code-and-Scripts/225b/
+32767 2147483647
+0 0 5 44992 45017 61095
+GAMS Community License for Manal Jain          G230303|0002AO-GEN0
+Indian Institute of Technology (IIT) Bombay, Computer Science and0
+1915854705                                                       0
+1 1 1 0
+225b/gmsprmun.dat
+15 65 1
+LP          16 0
+MIP         16 0
+RMIP        16 0
+NLP         8 0
+MCP         54 0
+MPEC        46 0
+RMPEC       46 0
+CNS         8 0
+DNLP        8 0
+RMINLP      8 0
+MINLP       1 0
+QCP         8 0
+MIQCP       58 0
+RMIQCP      8 0
+EMP         33 0
+ALPHAECP    11 5 1 0 0 0 0 0 0 0 0 0 0 1 0 1 0 0
+gmsecpus.run
+gmsecpux.out
+ANTIGONE    2011 5 1 0 0 0 1 0 0 0 1 1 1 1 1 1 1 0
+gmsgenus.run
+gmsgenux.out
+BARON       1001 5 1 1 1 1 1 0 0 0 1 1 1 1 1 1 1 0
+gmsba_us.run
+gmsba_ux.out
+CBC         2011 5 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0
+gmsgenus.run
+gmsgenux.out
+COINCBC     2011 5 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0
+gmsgenus.run optcbc.def
+gmsgenux.out
+COINIPOPT   11 5 1 1 0 1 1 0 0 0 1 1 1 0 1 0 1 0
+gmsgenus.run optipopt.def
+gmsgenux.out
+COINSCIP    2001 5 1 0 1 0 1 0 0 0 1 1 1 1 1 1 1 0
+gmsgenus.run
+gmsgenux.out
+CONOPT      1 0 1 1 0 1 1 0 0 0 1 1 1 0 1 0 1 0
+gmsgenus.run
+gmsgenux.out
+CONOPT3     1 0 1 1 0 1 1 0 0 0 1 1 1 0 1 0 1 0
+gmsgenus.run optconopt.def
+gmsgenux.out
+CONOPT4     1 0 1 1 0 1 1 0 0 0 1 1 1 0 1 0 1 0
+gmsgenus.run
+gmsgenux.out
+CONOPTD     1 0 1 1 0 1 1 0 0 0 1 1 1 0 1 0 1 0
+gmsgenus.run optconopt.def
+gmsgenux.out
+CONVERT     103011 5 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+gmsgenus.run optconvert.def
+gmsgenux.out
+CONVERTD    103011 5 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+gmsgenus.run
+gmsgenux.out
+CONVERTOLD  103011 5 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0
+gmscv_us.run
+gmscv_ux.out
+COPT        1011 5 1 1 1 1 0 0 0 0 0 0 0 0 1 1 1 0
+gmsgenus.run
+gmsgenux.out
+CPLEX       2011 5 1 1 1 1 0 0 0 0 0 0 0 0 1 1 1 0
+gmsgenus.run
+gmsgenux.out
+CPLEXCLASSIC 1011 5 1 1 1 1 0 0 0 0 0 0 0 0 1 1 1 0
+gmsgenus.run optcplex.def
+gmsgenux.out
+CPLEXD      2011 5 1 1 1 1 0 0 0 0 0 0 0 0 1 1 1 0
+gmsgenus.run
+gmsgenux.out
+CPOPTIMIZER 11 5 1 0 1 0 0 0 0 0 0 0 0 1 0 1 0 0
+gmsgenus.run
+gmsgenux.out
+DE          102011 5 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1
+gmsgenus.run
+gmsgenux.out
+DECIS       2011 5 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1
+gmsgenus.run
+gmsgenux.out
+DECISC      2011 5 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+gmsdecus.run optdecis.def
+DECISM      2011 5 0 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+gmsdemus.run optdecis.def
+DICOPT      1 5 1 0 0 0 0 0 0 0 0 0 0 1 0 1 0 0
+gmsdi_us.run
+gmsdi_ux.out
+EXAMINER    103011 5 1 1 1 1 1 1 1 1 0 1 1 1 1 1 1 0
+gmsex_us.run
+gmsex_ux.out
+EXAMINER2   103011 5 1 1 1 1 1 1 0 0 0 1 1 1 1 1 1 0
+gmsgenus.run optexaminer.def
+gmsgenux.out
+GAMSCHK     103011 5 1 1 1 1 1 1 0 0 0 1 1 1 1 1 1 0
+gmsck_us.run
+gmsck_ux.out
+GLOMIQO     2011 5 1 0 0 0 1 0 0 0 1 1 1 1 1 1 1 0
+gmsgenus.run
+gmsgenux.out
+GUROBI      11 5 1 1 1 1 1 0 0 0 0 1 1 1 1 1 1 0
+gmsgenus.run
+gmsgenux.out
+HIGHS       11 5 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0
+gmsgenus.run
+gmsgenux.out
+IPOPT       11 5 1 1 0 1 1 0 0 0 1 1 1 0 1 0 1 0
+gmsgenus.run
+gmsgenux.out
+IPOPTH      11 5 1 1 0 1 1 0 0 0 1 1 1 0 1 0 1 0
+gmsgenus.run optipopt.def
+gmsgenux.out
+JAMS        101011 5 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1
+gmsja_us.run
+gmsja_ux.out
+KESTREL     103010 5 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1
+gmske_us.run
+KNITRO      103011 0 1 1 0 1 1 1 1 1 1 1 1 1 1 1 1 0
+gmsgenus.run
+gmsgenux.out
+LINDO       1 5 1 1 1 1 1 0 0 0 0 1 1 1 1 1 1 1
+gmsgenus.run
+gmsgenux.out
+LINDOGLOBAL 1 5 1 1 1 1 1 0 0 0 0 1 1 1 1 1 1 0
+gmsgenus.run
+gmsgenux.out
+LOGMIP      101011 5 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1
+gmsja_us.run optjams.def
+gmsja_ux.out
+MILES       103001 5 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0
+gmsmceus.run
+gmsmceux.out
+MILESE      103001 5 1 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0
+gmsmceus.run optmiles.def
+gmsmceux.out
+MINOS       1 0 1 1 0 1 1 0 0 0 1 1 1 0 1 0 1 0
+gmsgenus.run
+gmsgenux.out
+MINOS5      1 0 1 1 0 1 1 0 0 0 1 1 1 0 1 0 1 0
+gmsgenus.run optminos.def
+gmsgenux.out
+MINOS55     1 0 1 1 0 1 1 0 0 0 1 1 1 0 1 0 1 0
+gmsgenus.run optminos.def
+gmsgenux.out
+MOSEK       11 5 1 1 1 1 1 0 0 0 0 1 1 1 1 1 1 0
+gmsgenus.run
+gmsgenux.out
+MPSGE       100001 5 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+gmsgewus.run
+gmsgewux.out
+NLPEC       103001 0 1 0 0 0 0 1 1 1 0 0 0 0 0 0 0 0
+gmscvnus.run
+gmscvnux.out
+OCTERACT    1001 0 1 0 0 0 1 0 0 0 0 1 1 1 1 1 1 0
+gmsgenus.run
+gmsgenux.out
+ODHCPLEX    2011 5 1 0 1 0 0 0 0 0 0 0 0 0 0 1 0 0
+gmsgenus.run
+gmsgenux.out
+OSICPLEX    11 5 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0
+gmsgenus.run
+gmsgenux.out
+OSIGUROBI   11 5 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0
+gmsgenus.run
+gmsgenux.out
+OSIMOSEK    11 5 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0
+gmsgenus.run
+gmsgenux.out
+OSISOPLEX   11 5 1 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0
+gmsgenus.run
+gmsgenux.out
+OSIXPRESS   11 5 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0
+gmsgenus.run
+gmsgenux.out
+PATH        103001 5 1 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0
+gmsgenus.run
+gmsgenux.out
+PATHC       103001 5 1 0 0 0 0 1 0 0 1 0 0 0 0 0 0 0
+gmsgenus.run optpath.def
+gmsgenux.out
+PATHNLP     11 5 1 1 0 1 1 0 0 0 0 1 1 0 1 0 1 0
+gmsptnus.run
+gmsptnux.out
+QUADMINOS   1 0 1 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0
+gmsgenus.run optminos.def
+gmsgenux.out
+SBB         11 5 1 0 0 0 0 0 0 0 0 0 0 1 0 1 0 0
+gmssb_us.run
+gmssb_ux.out
+SCENSOLVER  1001 5 1 1 1 1 1 1 0 0 1 1 1 1 1 1 1 0
+gmsgenus.run
+gmsgenux.out
+SCIP        2001 5 1 0 1 0 1 0 0 0 1 1 1 1 1 1 1 0
+gmsgenus.run
+gmsgenux.out
+SELKIE      102011 5 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1
+gmsgenus.run
+gmsgenux.out
+SHOT        1001 5 1 0 0 0 0 0 0 0 0 0 0 1 0 1 0 0
+gmsgenus.run
+gmsgenux.out
+SNOPT       1 0 1 1 0 1 1 0 0 0 1 1 1 0 1 0 1 0
+gmsgenus.run
+gmsgenux.out
+SOPLEX      11 5 1 1 0 1 0 0 0 0 0 0 0 0 0 0 0 0
+gmsgenus.run
+gmsgenux.out
+XPRESS      11 5 1 1 1 1 1 0 0 0 1 1 1 1 1 1 1 0
+gmsgenus.run
+gmsgenux.out
+163763110C                                                       0
+CL5366                                         A COMMUNITY       0
+Manal Jain, 213050008@iitb.ac.in                                 0
+1 /home/manal/.local/share/GAMS/gamslice.txt
+1 /opt/gams/gams42.3_linux_x64_64_sfx/gmscmpun.txt
+/home/manal/Downloads/MTP/JalTantra-Code-and-Scripts/dff3eaff55927f950600b383971c276152d2de3f6329340358aa6f1c0ee570adm2.dat
+0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0
+0 0  1.00000000000000E+0000 0 158
+0 0 0
+0 0 0 1 0
+/home/manal/Downloads/MTP/JalTantra-Code-and-Scripts/m2.so
+/home/manal/Downloads/MTP/JalTantra-Code-and-Scripts/225b/sbbinfo.dat
+/home/manal/Downloads/MTP/JalTantra-Code-and-Scripts/225b/gamscntr.dat
+/home/manal/Downloads/MTP/JalTantra-Code-and-Scripts/
+dat
+ 1.00000000000000E+0299
+
+
+/home/manal/Downloads/MTP/JalTantra-Code-and-Scripts/DataNetworkGraphInput_hashed/dff3eaff55927f950600b383971c276152d2de3f6329340358aa6f1c0ee570adm2.gms
+ 5.93300000000000E+0003  1.61600000000000E+0003

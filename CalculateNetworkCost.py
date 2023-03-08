@@ -11,6 +11,7 @@ import subprocess
 import sys
 import time
 import traceback
+import shutil
 from typing import List, Tuple, Union, Dict, Optional
 
 from rich.logging import RichHandler as rich_RichHandler
@@ -59,6 +60,7 @@ g_STD_OUT_ERR_TO_TERMINAL = (sys.stdout.isatty() and sys.stderr.isatty())
 # REFER: https://stackoverflow.com/questions/3172470/actual-meaning-of-shell-true-in-subprocess
 g_BASH_PATH = subprocess.check_output(['which', 'bash'], shell=False).decode().strip()
 
+global_execution_time = 300
 
 def run_command(cmd: str, default_result: str = '', debug_print: bool = False) -> Tuple[bool, str]:
     """Execute `cmd` using bash
@@ -486,6 +488,217 @@ class SolverOutputAnalyzerBaron(SolverOutputAnalyzerParent):
         # noinspection PyUnreachableCode
         return False, file_to_parse, objective_value, 'FIXME: Unhandled unknown case'
 
+class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
+
+    def __init__(self, engine_path: str, engine_options: str, threads: int):
+        process_name_to_stop_using_ctrl_c = 'alphaecp'  # For 1 core and multi core, same process is to be stopped
+        super().__init__(engine_path, engine_options, process_name_to_stop_using_ctrl_c)
+
+    def __alphaecp_extract_output_table(self, std_out_err_file_path: str) -> str:
+        return run_command_get_output(f"bash output_table_extractor_baron.sh '{std_out_err_file_path}'", '')
+
+    def gams_to_ampl_parser(self,gams_file_path, output_file_path):
+
+        try:
+            gams_file_text = open(gams_file_path, 'r').read()
+            output_file_txt = open(output_file_path, 'w')
+
+            g_logger.info(f'In the gams_to_ampl_parser {gams_file_path} {output_file_path}')
+
+            h_variable = "---- VAR h"
+            q_variable = "---- VAR q"
+            l_variable = "---- VAR l"
+
+            # READ FILE
+            df = open(gams_file_path)
+
+            # read file
+            read = df.read()
+
+            # return cursor to the beginning of the file.
+            df.seek(0)
+            read
+
+            arr = []  # will store all the lines
+
+            # count number of lines in the file
+            line = 1
+            for word in read:
+                if word == '\n':
+                    line += 1
+
+            for i in range(line):
+                # readline() method,
+                # reads one line at
+                # a time
+                arr.append(df.readline())
+
+            h_variable_start = 0
+            h_variable_end = 0
+            q_variable_start = 0
+            q_variable_end = 0
+            l_variable_start = 0
+            l_variable_end = 0
+            for i in range(len(arr)):
+
+                if h_variable in arr[i]:
+                    q_variable_end = i - 4
+                    h_variable_start = i + 4
+
+                if "**** REPORT SUMMARY" in arr[i]:
+                    h_variable_end = i - 1
+
+                if q_variable in arr[i]:
+                    q_variable_start = i + 4
+                    l_variable_end = i - 1
+
+                if l_variable in arr[i]:
+                    l_variable_start = i + 4
+
+            total_execution_time = re.search(r'EXECUTION TIME\s+=\s+(\d+\.\d+) SECONDS', gams_file_text, re.M).group(1)
+            output_file_txt.write(f'_total_solve_time = {total_execution_time}\n\n')
+
+            # printing head values
+            output_file_txt.write("h[i] [*] :=\n")
+            for i in range(h_variable_start, h_variable_end - 1):
+                line = arr[i].strip().split()
+                head_value = float(line[2])
+                output_file_txt.write(f'{line[0]}  {head_value}\n')
+            output_file_txt.write(';\n\n')
+
+            # printing flow values
+            output_file_txt.write("q[i,j] :=\n")
+            min_length = 6
+            for i in range(q_variable_start, q_variable_end - 1):
+                line = arr[i].strip().split()
+                length = len(line)
+                min_length = min(min_length, length)
+            for i in range(q_variable_start, q_variable_end - 1):
+                line = arr[i].strip().split()
+                srcToDest = ''
+                for j in range(0, len(line) - min_length + 1):
+                    srcToDest += line[j]
+                srcToDest = srcToDest.split('.')
+                output_file_txt.write(f'{srcToDest[0]} {srcToDest[1]}\t{line[(len(line)) - 3]}\n')
+            output_file_txt.write(';\n\n')
+
+            # printing length values
+            output_file_txt.write("l[i,j,k] :=\n")
+            min_length = 7
+            # print(l_variable_start,l_variable_end)
+            for i in range(l_variable_start, l_variable_end):
+                line = arr[i].strip().split()
+                length = len(line)
+                min_length = min(min_length, length)
+
+            for i in range(l_variable_start, l_variable_end):
+                line = arr[i].strip().split()
+                if line[len(line) - 3] == '.':
+                    continue
+                links = ''
+                for j in range(0, len(line) - min_length + 1):
+                    links += line[j]
+                links = links.split('.')
+                length_value = float(line[len(line) - 3])
+                output_file_txt.write(f'{links[0]}  {links[1]}  {links[2]}\t{length_value}\n')
+            output_file_txt.write(';\n\n')
+
+            output_file_txt.write(f'_total_solve_time = {total_execution_time}\n\n')
+
+            # **** OBJECTIVE VALUE
+            best_solution = re.search(r"\*\*\*\* OBJECTIVE VALUE\s+([0-9]+\.[0-9]+)", gams_file_text, re.M).group(
+                1)  # if there is no value then 'NoneType' object has no attribute 'group'
+            output_file_txt.write(f'total_cost = {best_solution}')
+
+            g_logger.info("gams_to_ampl parser finished")
+
+        except Exception as e:
+            g_logger.error(f'CHECKME: {type(e)}, error:\n{e}')
+            g_logger.info("There was some error while parsing the gams output file")
+
+    def check_errors(self, exec_info: 'NetworkExecutionInformation') -> Tuple[bool, str]:
+        """By default, it is assumed that everything is ok (i.e. error free)"""
+
+        try:
+            output_file_directory = exec_info.uniq_exec_output_dir  # move the output files in this directory
+            g_logger.info(f'gams output file {output_file_directory}')
+
+            model_name = exec_info.short_uniq_model_name
+            g_logger.info(model_name)
+
+            model_idx = exec_info.idx
+            g_logger.info(model_idx)
+
+            prefix = exec_info.prefix
+            g_logger.info(prefix)
+
+            data_file_hash = exec_info.data_file_hash
+
+            source_file = f'{data_file_hash}{model_name}.lst'
+            copy_source_file = f'{data_file_hash}{model_name}{prefix}.lst'
+            shutil.copy(source_file, copy_source_file)
+
+            destination_address = f'{output_file_directory}/{copy_source_file}'
+            os.replace(copy_source_file, destination_address)
+            g_logger.info(f'gams output has been moved. os.replace({copy_source_file}, {destination_address})')
+
+            g_logger.info("replacing current error file with desired format")
+
+            current_std_error = exec_info.uniq_std_out_err_file_path
+            rename_std_out_err = f'{output_file_directory}/gams_terminal_output.txt'
+            os.rename(current_std_error , rename_std_out_err)
+
+            copy_source_file_path=f'{output_file_directory}/{copy_source_file}'
+            self.gams_to_ampl_parser(copy_source_file_path,current_std_error)
+
+        except Exception as e:
+            g_logger.error(f'CHECKME: {type(e)}, error:\n{e}')
+            g_logger.info("There was some error while copying the gams output file")
+            return False, 'There are some errors'
+
+        g_logger.error(f"`No errors' for {self.engine_path=}")
+        return True, 'No errors'
+
+    def extract_best_solution(self, exec_info: 'NetworkExecutionInformation') -> Tuple[bool, float]:
+        # Extract the solution from the std_out_err file using the value printed by the AMPL commands:
+        #     option display_precision 0;
+        #     display total_cost;
+        try:
+            file_txt = open(exec_info.uniq_std_out_err_file_path, 'r').read()
+            best_solution = re.search(r'^total_cost\s*=\s*(.*)$', file_txt, re.M).group(1)
+            best_solution = float(best_solution)
+            ok = True
+            if best_solution == 0 or best_solution > 1e40:
+                g_logger.warning(f"Probably an infeasible solution found by alphaecp: '{best_solution}'")
+                g_logger.info(f'Instance={exec_info}')
+                ok = False
+            return ok, best_solution
+        except Exception as e:
+            g_logger.error(f'CHECKME: {type(e)}, error:\n{e}')
+            g_logger.debug('Probably, alphaecp did not terminate immediately even after receiving the appropriate signal')
+
+        g_logger.info('Using fallback mechanism to extract the best solution')
+
+        csv = self.__alphaecp_extract_output_table(exec_info.uniq_std_out_err_file_path)
+        if csv == '':
+            return False, 0.0
+        lines = csv.split('\n')
+        lines = [line for line in lines if line != ',' and (not line.startswith('Processing file'))]
+        g_logger.debug(f'{lines=}')
+
+        ok = len(lines) > 0
+        best_solution = 0.0
+        if len(lines) > 0:
+            best_solution = float(lines[-1].split(',')[1])
+        if best_solution > 1e40:
+            g_logger.warning(f"Probably an infeasible solution found by alphaecp: '{lines[-1]}'")
+            g_logger.info(f'Instance={exec_info}')
+            ok = False
+        return ok, best_solution
+
+    def check_solution_found(self, exec_info: 'NetworkExecutionInformation') -> bool:
+        return self.extract_best_solution(exec_info)[0]
+
 
 class SolverOutputAnalyzerOcteract(SolverOutputAnalyzerParent):
     """
@@ -700,10 +913,15 @@ class NetworkExecutionInformation:
                         type(self.short_uniq_combination)))
         g_logger.debug((self.short_uniq_model_name, self.short_uniq_data_file_name, self.short_uniq_combination))
 
+        self.prefix = aes.prefix
         self.models_dir: str = aes.models_dir
         self.data_file_path: str = aes.data_file_path
+        self.data_file_hash: str = aes.data_file_hash
+        self.execution_time_limit=aes.r_execution_time_limit
         self.engine_path: str = aes.solvers[self.solver_name].engine_path
         self.engine_options: str = aes.solvers[self.solver_name].engine_options
+        self.output_dir_level_0 = aes.OUTPUT_DIR_LEVEL_0
+        self.output_dir_level_1_network_specific=aes.output_dir_level_1_network_specific
         self.uniq_exec_output_dir: pathlib.Path = \
             pathlib.Path(aes.output_dir_level_1_network_specific) / self.short_uniq_combination
 
@@ -723,6 +941,10 @@ class NetworkExecutionInformation:
 
 # ---
 
+
+
+
+
 class AutoExecutorSettings:
     # Level 0 is main directory inside which everything will exist
     OUTPUT_DIR_LEVEL_0 = './NetworkResults/'.rstrip('/')  # Note: Do not put trailing forward slash ('/')
@@ -730,7 +952,8 @@ class AutoExecutorSettings:
     # Please ensure that proper escaping of white spaces and other special characters
     # is done because this will be executed in a fashion similar to `./a.out`
     AMPL_PATH = './ampl.linux-intel64/ampl'
-    AVAILABLE_SOLVERS =  ['baron', 'octeract']  # NOTE: Also look at `__update_solver_dict()` method when updating this
+    GAMS_PATH = '/opt/gams/gams42.3_linux_x64_64_sfx/gams'
+    AVAILABLE_SOLVERS =  ['alphaecp','baron', 'octeract']  # NOTE: Also look at `__update_solver_dict()` method when updating this
     AVAILABLE_MODELS = {1: 'm1_basic.R', 2: 'm2_basic2_v2.R', 3: 'm3_descrete_segment.R', 4: 'm4_parallel_links.R'}
     TMUX_UNIQUE_PREFIX = f'AR_NC_{os.getpid()}_'  # AR = Auto Run, NC = Network Cost
 
@@ -743,10 +966,9 @@ class AutoExecutorSettings:
         self.r_execution_time_limit = (0 * 60 * 60) + (5 * 60) + 0
         self.r_min_free_ram = 2  # GiB
         self.r_min_free_swap = 8  # GiB, usefulness of this variable depends on the swappiness of the system
-
+        self.prefix=''
         self.models_dir = "./Files/Models"  # m1, m3 => q   ,   m2, m4 => q1, q2
         self.solvers: Dict[str, SolverOutputAnalyzerParent] = {}
-        self.__update_solver_dict()
 
         # Tuples of (Solver name & Model name) which are to be executed to
         # find the cost of the given graph/network (i.e. data/testcase file)
@@ -758,12 +980,24 @@ class AutoExecutorSettings:
         self.output_network_specific_result: str = ''
         self.output_result_summary_file: str = ''
 
+        self.__update_solver_dict()
+
+
+
     def __update_solver_dict(self):
         # NOTE: Update `AutoExecutorSettings.AVAILABLE_SOLVERS` if keys in below dictionary are updated
         # NOTE: Use double quotes ONLY in the below variables
         timeoption=self.r_execution_time_limit-30
-        print(timeoption)
+
+        fileHash=self.data_file_hash
+
+        gams_output_file = self.output_dir_level_1_network_specific+"/alphaecp_m1_"+fileHash
         self.solvers = {
+            'alphaecp' : SolverOutputAnalyzerAlphaecp(
+                engine_path=f'{gams_output_file}',
+                engine_options=f'"reslim={timeoption}"',
+                threads=self.r_cpu_cores_per_solver
+            ),
             'baron': SolverOutputAnalyzerBaron(
                 engine_path='./ampl.linux-intel64/baron',
                 engine_options=f'option baron_options "threads={self.r_cpu_cores_per_solver} '
@@ -796,9 +1030,12 @@ class AutoExecutorSettings:
         self.data_file_hash = file_hash_sha256(data_file_path)
         self.output_dir_level_1_network_specific = f'{AutoExecutorSettings.OUTPUT_DIR_LEVEL_0}' \
                                                    f'/{self.data_file_hash}'
+        self.prefix = prefix
         self.output_dir_level_1_network_specific = self.output_dir_level_1_network_specific+prefix
         self.output_network_specific_result = self.output_dir_level_1_network_specific + '/0_result.txt'
         self.output_result_summary_file = self.output_dir_level_1_network_specific + '/0_result_summary.txt'
+
+        self.__update_solver_dict()
 
     def start_solver(self, idx: int) -> NetworkExecutionInformation:
         """
@@ -850,6 +1087,65 @@ echo $$ > "{info.uniq_pid_file_path}"
 EOF
 echo > /dev/null
 '
+        ''', debug_print=self.debug)
+        # At max we wait for 60 seconds
+        pid_file_wait_time = 0
+        while (not os.path.exists(info.uniq_pid_file_path)) and (pid_file_wait_time < 60):
+            g_logger.info('PID file not generated. Sleeping for 1 second...')
+            pid_file_wait_time += 1
+            time.sleep(1)
+        if os.path.exists(info.uniq_pid_file_path):
+            info.tmux_bash_pid = run_command_get_output(f'cat "{info.uniq_pid_file_path}"')
+        else:
+            g_logger.error(f'FIXME: CHECKME: PID file not created for {info=}')
+            info.tmux_bash_pid = 0
+        return info
+
+    def start_solver_gams(self, idx:int) -> NetworkExecutionInformation:
+        """
+        Launch the solver using `tmux` and `gams` in background (i.e. asynchronously / non-blocking)
+
+        Args:
+            modelname: name of the solver
+            my_settings : Auto Executor Settings
+
+        Returns:
+            `class NetworkExecutionInformation` object which has all the information regarding the execution
+        """
+        info = NetworkExecutionInformation(self, idx)
+
+        info.uniq_exec_output_dir.mkdir(exist_ok=True)
+        if not info.uniq_exec_output_dir.exists():
+            g_logger.warning(f"Some directory(s) do not exist in the path: '{info.uniq_exec_output_dir.resolve()}'")
+            info.uniq_exec_output_dir.mkdir(parents=True, exist_ok=True)
+
+        data_file = info.data_file_path
+
+        data_file_name = data_file.replace(".R","")
+
+        if idx == 0:
+            data_file_name = data_file_name+'m1.gms'
+        if idx == 1:
+            data_file_name = data_file_name+'m2.gms'
+
+        time_option = info.execution_time_limit - 30
+
+        info.uniq_exec_output_dir.mkdir(exist_ok=True)
+        if not info.uniq_exec_output_dir.exists():
+            g_logger.warning(f"Some directory(s) do not exist in the path: '{info.uniq_exec_output_dir.resolve()}'")
+            info.uniq_exec_output_dir.mkdir(parents=True, exist_ok=True)
+
+        # REFER: https://stackoverflow.com/questions/2500436/how-does-cat-eof-work-in-bash
+        #        📝 'EOF' should be the only word on the line without any space before and after it.
+        # NOTE: The statement `echo > /dev/null` is required to make the below command work. Without
+        #       it, AMPL is not started. Probably, it has something to do with the `EOF` thing.
+        # NOTE: The order of > and 2>&1 matters in the below command
+        # REFER: https://github.com/fenilgmehta/Jaltantra-Code-and-Scripts/blob/main/Files/main.run
+        #        For AMPL commands
+        run_command_get_output(rf'''
+            tmux new-session -d -s '{info.uniq_tmux_session_name}' '
+echo $$ > "{info.uniq_pid_file_path}"
+"{self.GAMS_PATH}" "{data_file_name}" reslim="{time_option}" > "{info.uniq_std_out_err_file_path}" 2>&1 <<EOF '
         ''', debug_print=self.debug)
         # At max we wait for 60 seconds
         pid_file_wait_time = 0
@@ -1070,7 +1366,10 @@ def main_start_first_batch(
     g_logger.info('START: Execution of first batch of solvers')
     run_command(f"echo 'running' > {my_settings.output_dir_level_1_network_specific}/0_status")
     for i in range(min_combination_parallel_solvers):
-        exec_info = my_settings.start_solver(i)
+        if i == 0 or i == 1:
+            exec_info = my_settings.start_solver_gams(i)
+        else:
+            exec_info = my_settings.start_solver(i)
         g_logger.debug(str(exec_info))
         g_logger.debug(f'{exec_info.tmux_bash_pid=}')
         if exec_info.tmux_bash_pid == '0':
@@ -1084,6 +1383,30 @@ def main_start_first_batch(
     del i, exec_info
     g_logger.info('FINISHED: Execution of first batch of solvers')
 
+def main_start_first_batch_gams(
+        my_settings: AutoExecutorSettings,
+        tmux_original_list: List[NetworkExecutionInformation],
+        tmux_monitor_list: List[NetworkExecutionInformation]
+) -> None:
+    g_logger.info('START: Execution of first batch of gams solvers')
+    run_command(f"echo 'running' > {my_settings.output_dir_level_1_network_specific}/0_status")
+
+    exec_info = my_settings.start_solver_gams('m1',my_settings)
+    g_logger.debug(str(exec_info))
+    g_logger.debug(f'{exec_info.tmux_bash_pid=}')
+    if exec_info.tmux_bash_pid == '0':
+        g_logger.error('FIXME: exec_info.tmux_bash_pid is 0')
+    else :
+        tmux_original_list.append(exec_info)
+        tmux_monitor_list.append(exec_info)
+        g_logger.info(f'tmux session "{exec_info.short_uniq_combination}" -> {exec_info.tmux_bash_pid}')
+        time.sleep(0.2)
+        g_logger.debug(f'{len(tmux_monitor_list)=}')
+
+
+
+    del exec_info
+    g_logger.info('FINISHED: Execution of first batch of gams solvers')
 
 def main_error_checking_round_1(tmux_monitor_list: List[NetworkExecutionInformation],
                                 tmux_finished_list: List[NetworkExecutionInformation]) -> None:
@@ -1464,6 +1787,7 @@ def update_settings(args: argparse.Namespace) -> AutoExecutorSettings:
     g_logger.info(f"Input file hash = '{my_settings.data_file_hash}'")
 
     my_settings.set_execution_time_limit(seconds=args.time)
+    global_execution_time=args.time
     g_logger.info(f'Solver Execution Time Limit = {my_settings.r_execution_time_limit // 60 // 60:02}:'
                   f'{(my_settings.r_execution_time_limit // 60) % 60:02}:'
                   f'{my_settings.r_execution_time_limit % 60:02}')

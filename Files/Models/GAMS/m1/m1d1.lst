@@ -1,8 +1,611 @@
--  Page 1
-G e n e r a l   A l g e b r a i c   M o d e l i n g   S y s t e m
+GAMS 42.3.0  dacf7d8e Mar 2, 2023           LEX-LEG x86 64bit/Linux - 03/04/23 19:28:21 Page 1
+a Jaltantra model
+C o m p i l a t i o n
 
 
-**** No license specified and no gamslice.txt found in standard locations.
-**** Terminated due to a licensing error
-**** Request a demo license at www.gams.com/download
+   2  Sets
+   3      nodes   /1, 2, 3, 4, 5, 6, 7 /
+   4      pipes  /1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14/
+   5      src(nodes) /1/;
+   6  alias (src,srcs);
+   7  alias (nodes,j) ;
+   8  alias (nodes,j1);
+   9  Set arcs(nodes,j) /1.2, 2.4, 2.3, 3.5, 4.5, 4.6, 7.5,6.7/
+  10   
+  11   
+  12  Parameters
+  13      Len(nodes,j) /  1  .2  1000 , 2  .4  1000 , 2  .3  1000 , 3  .5  1000
+  14                      4  .5  1000 , 4  .6  1000 , 7  .5  1000 , 6  .7  1000/
+  15      E(nodes) / 1   210 , 2   150 , 3   160 , 4   155 , 5   150 , 6   165 , 7   160 /
+  16      P(nodes) /1   0 , 2   30 , 3   30 , 4   30 , 5   30 , 6   30 , 7   30 /
+  17      D(nodes) /1   -311.1087 , 2   27.7777 , 3   27.777 , 4   33.333 , 5   75 , 6   91.666 , 7   55.555/
+  18      dis(pipes) /  1 25.4, 2 50.8 , 3 76.2 , 4 101.6 , 5 152.4 , 6 203.2 , 7 254 , 8 304.8 , 9 355.6 ,
+  19                      10   406.4 , 11   457.2 , 12   508 , 13   558.8 , 14   609.6/
+  20      C(pipes) /  1   2 , 2   5 , 3   8 , 4   11 , 5   16 , 6   23 , 7   32
+  21                  8   50 , 9   60 , 10   90 , 11   130 , 12   170 , 13   300 , 14   550 /
+  22      R(pipes) /  1   130 , 2   130 , 3   130 , 4   130 , 5   130 , 6   130 , 7   130
+  23                  8   130 , 9   130 , 10   130 , 11   130 , 12   130 , 13   130 , 14   130 /
+  24      Source(src)   /1 1/;
+  25   
+  26   
+  27  Scalar omega  /10.68/;
+  28  Scalar bnd ;
+  29  Scalar qm;
+  30  Scalar q_M;
+  31   
+  32  bnd = sum(src,D(src));
+  33  q_M=-bnd;
+  34  qm=bnd;
+  35   
+  36  Variable l(nodes,j,pipes);
+  37  l.lo(nodes,j,pipes)= EPS;
+  38   
+  39  Variable q(nodes,j);
+  40  q.lo(nodes,j)=qm;
+  41  q.up(nodes,j)=q_M;
+  42   
+  43  Variables z;
+  44   
+  45  Variable h(nodes);
+  46   
+  47  Equations cost "objective function",bound1(nodes,j,pipes),cons1(nodes),cons2(nodes),cons3(nodes,j),cons5(src), cons4(nodes,j) ;
+  48   
+  49  cost..  z=e=sum(arcs(nodes,j),sum(pipes,l(arcs,pipes)*c(pipes)));
+  50   
+  51  bound1(nodes,j,pipes)$arcs(nodes,j).. l(nodes,j,pipes) =l= Len(nodes,j);
+  52  cons1(nodes).. sum(arcs(j,nodes),q(arcs)) =e= sum(arcs(nodes,j),q(arcs)) + D(nodes);
+  53  cons2(nodes).. h(nodes) =g= E(nodes) + P(nodes);
+  54  cons3(arcs(nodes,j)).. h(nodes)-h(j)=e=sum(pipes,((q(arcs)*(abs(q(arcs))**0.852))*(0.001**1.852)*omega*l(arcs,pipes)/((R(pipes)**1.852)*(dis(pipes)/1000)**4.87)));
+  55  cons4(arcs(nodes,j)).. sum(pipes,l(arcs,pipes)) =e=Len(arcs);
+  56  cons5(src)..  h(src)=e= sum(srcs,E(srcs));
+  57   
+  58  model m1  /all/  ;
+  59  solve m1 using minlp minimizing z ;
+  60   
+  61   
+  62   
 
+
+COMPILATION TIME     =        0.001 SECONDS      3 MB  42.3.0 dacf7d8e LEX-LEG
+GAMS 42.3.0  dacf7d8e Mar 2, 2023           LEX-LEG x86 64bit/Linux - 03/04/23 19:28:21 Page 2
+a Jaltantra model
+Equation Listing    SOLVE m1 Using MINLP From line 59
+
+
+---- cost  =E=  objective function
+
+cost..  - 2*l(1,2,1) - 5*l(1,2,2) - 8*l(1,2,3) - 11*l(1,2,4) - 16*l(1,2,5) - 23*l(1,2,6) - 32*l(1,2,7) - 50*l(1,2,8) - 60*l(1,2,9) - 90*l(1,2,10) - 130*l(1,2,11) - 170*l(1,2,12) - 300*l(1,2,13) - 550*l(1,2,14) - 2*l(2,3,1) - 5*l(2,3,2) - 8*l(2,3,3) - 11*l(2,3,4) - 16*l(2,3,5) - 23*l(2,3,6) - 32*l(2,3,7) - 50*l(2,3,8) - 60*l(2,3,9) - 90*l(2,3,10) - 130*l(2,3,11) - 170*l(2,3,12) - 300*l(2,3,13) - 550*l(2,3,14) - 2*l(2,4,1) - 5*l(2,4,2) - 8*l(2,4,3) - 11*l(2,4,4) - 16*l(2,4,5) - 23*l(2,4,6) - 32*l(2,4,7) - 50*l(2,4,8) - 60*l(2,4,9) - 90*l(2,4,10) - 130*l(2,4,11) - 170*l(2,4,12) - 300*l(2,4,13) - 550*l(2,4,14) - 2*l(3,5,1) - 5*l(3,5,2) - 8*l(3,5,3) - 11*l(3,5,4) - 16*l(3,5,5) - 23*l(3,5,6) - 32*l(3,5,7) - 50*l(3,5,8) - 60*l(3,5,9) - 90*l(3,5,10) - 130*l(3,5,11) - 170*l(3,5,12) - 300*l(3,5,13) - 550*l(3,5,14) - 2*l(4,5,1) - 5*l(4,5,2) - 8*l(4,5,3) - 11*l(4,5,4) - 16*l(4,5,5) - 23*l(4,5,6) - 32*l(4,5,7) - 50*l(4,5,8) - 60*l(4,5,9) - 90*l(4,5,10) - 130*l(4,5,11) - 170*l(4,5,12) - 300*l(4,5,13) - 550*l(4,5,14) - 2*l(4,6,1) - 5*l(4,6,2) - 8*l(4,6,3) - 11*l(4,6,4) - 16*l(4,6,5) - 23*l(4,6,6) - 32*l(4,6,7) - 50*l(4,6,8) - 60*l(4,6,9) - 90*l(4,6,10) - 130*l(4,6,11) - 170*l(4,6,12) - 300*l(4,6,13) - 550*l(4,6,14) - 2*l(6,7,1) - 5*l(6,7,2) - 8*l(6,7,3) - 11*l(6,7,4) - 16*l(6,7,5) - 23*l(6,7,6) - 32*l(6,7,7) - 50*l(6,7,8) - 60*l(6,7,9) - 90*l(6,7,10) - 130*l(6,7,11) - 170*l(6,7,12) - 300*l(6,7,13) - 550*l(6,7,14) - 2*l(7,5,1) - 5*l(7,5,2) - 8*l(7,5,3) - 11*l(7,5,4) - 16*l(7,5,5) - 23*l(7,5,6) - 32*l(7,5,7) - 50*l(7,5,8) - 60*l(7,5,9) - 90*l(7,5,10) - 130*l(7,5,11) - 170*l(7,5,12) - 300*l(7,5,13) - 550*l(7,5,14) + z =E= 0 ; (LHS = 0)
+     
+
+---- bound1  =L=  
+
+bound1(1,2,1)..  l(1,2,1) =L= 1000 ; (LHS = 0)
+     
+bound1(1,2,2)..  l(1,2,2) =L= 1000 ; (LHS = 0)
+     
+bound1(1,2,3)..  l(1,2,3) =L= 1000 ; (LHS = 0)
+     
+REMAINING 109 ENTRIES SKIPPED
+
+
+---- cons1  =E=  
+
+cons1(1)..  - q(1,2) =E= -311.1087 ; (LHS = 0, INFES = 311.1087 ****)
+     
+cons1(2)..  q(1,2) - q(2,3) - q(2,4) =E= 27.7777 ; (LHS = 0, INFES = 27.7777 ****)
+     
+cons1(3)..  q(2,3) - q(3,5) =E= 27.777 ; (LHS = 0, INFES = 27.777 ****)
+     
+REMAINING 4 ENTRIES SKIPPED
+
+
+---- cons2  =G=  
+
+cons2(1)..  h(1) =G= 210 ; (LHS = 0, INFES = 210 ****)
+     
+cons2(2)..  h(2) =G= 180 ; (LHS = 0, INFES = 180 ****)
+     
+cons2(3)..  h(3) =G= 190 ; (LHS = 0, INFES = 190 ****)
+     
+REMAINING 4 ENTRIES SKIPPED
+
+
+---- cons3  =E=  
+
+cons3(1,2)..  (0)*l(1,2,1) + (0)*l(1,2,2) + (0)*l(1,2,3) + (0)*l(1,2,4) + (0)*l(1,2,5) + (0)*l(1,2,6) + (0)*l(1,2,7) + (0)*l(1,2,8) + (0)*l(1,2,9) + (0)*l(1,2,10) + (0)*l(1,2,11) + (0)*l(1,2,12) + (0)*l(1,2,13) + (0)*l(1,2,14) + (0)*q(1,2) + h(1) - h(2) =E= 0 ; (LHS = 0)
+     
+cons3(2,3)..  (0)*l(2,3,1) + (0)*l(2,3,2) + (0)*l(2,3,3) + (0)*l(2,3,4) + (0)*l(2,3,5) + (0)*l(2,3,6) + (0)*l(2,3,7) + (0)*l(2,3,8) + (0)*l(2,3,9) + (0)*l(2,3,10) + (0)*l(2,3,11) + (0)*l(2,3,12) + (0)*l(2,3,13) + (0)*l(2,3,14) + (0)*q(2,3) + h(2) - h(3) =E= 0 ; (LHS = 0)
+     
+cons3(2,4)..  (0)*l(2,4,1) + (0)*l(2,4,2) + (0)*l(2,4,3) + (0)*l(2,4,4) + (0)*l(2,4,5) + (0)*l(2,4,6) + (0)*l(2,4,7) + (0)*l(2,4,8) + (0)*l(2,4,9) + (0)*l(2,4,10) + (0)*l(2,4,11) + (0)*l(2,4,12) + (0)*l(2,4,13) + (0)*l(2,4,14) + (0)*q(2,4) + h(2) - h(4) =E= 0 ; (LHS = 0)
+     
+REMAINING 5 ENTRIES SKIPPED
+
+
+---- cons5  =E=  
+
+cons5(1)..  h(1) =E= 210 ; (LHS = 0, INFES = 210 ****)
+     
+
+---- cons4  =E=  
+
+cons4(1,2)..  l(1,2,1) + l(1,2,2) + l(1,2,3) + l(1,2,4) + l(1,2,5) + l(1,2,6) + l(1,2,7) + l(1,2,8) + l(1,2,9) + l(1,2,10) + l(1,2,11) + l(1,2,12) + l(1,2,13) + l(1,2,14) =E= 1000 ; (LHS = 0, INFES = 1000 ****)
+     
+cons4(2,3)..  l(2,3,1) + l(2,3,2) + l(2,3,3) + l(2,3,4) + l(2,3,5) + l(2,3,6) + l(2,3,7) + l(2,3,8) + l(2,3,9) + l(2,3,10) + l(2,3,11) + l(2,3,12) + l(2,3,13) + l(2,3,14) =E= 1000 ; (LHS = 0, INFES = 1000 ****)
+     
+cons4(2,4)..  l(2,4,1) + l(2,4,2) + l(2,4,3) + l(2,4,4) + l(2,4,5) + l(2,4,6) + l(2,4,7) + l(2,4,8) + l(2,4,9) + l(2,4,10) + l(2,4,11) + l(2,4,12) + l(2,4,13) + l(2,4,14) =E= 1000 ; (LHS = 0, INFES = 1000 ****)
+     
+REMAINING 5 ENTRIES SKIPPED
+
+GAMS 42.3.0  dacf7d8e Mar 2, 2023           LEX-LEG x86 64bit/Linux - 03/04/23 19:28:21 Page 3
+a Jaltantra model
+Column Listing      SOLVE m1 Using MINLP From line 59
+
+
+---- l  
+
+l(1,2,1)
+                (.LO, .L, .UP, .M = EPS, 0, +INF, 0)
+       -2       cost
+        1       bound1(1,2,1)
+       (0)      cons3(1,2)
+        1       cons4(1,2)
+
+l(1,2,2)
+                (.LO, .L, .UP, .M = EPS, 0, +INF, 0)
+       -5       cost
+        1       bound1(1,2,2)
+       (0)      cons3(1,2)
+        1       cons4(1,2)
+
+l(1,2,3)
+                (.LO, .L, .UP, .M = EPS, 0, +INF, 0)
+       -8       cost
+        1       bound1(1,2,3)
+       (0)      cons3(1,2)
+        1       cons4(1,2)
+
+REMAINING 109 ENTRIES SKIPPED
+
+---- q  
+
+q(1,2)
+                (.LO, .L, .UP, .M = -311.1087, 0, 311.1087, 0)
+       -1       cons1(1)
+        1       cons1(2)
+       (0)      cons3(1,2)
+
+q(2,3)
+                (.LO, .L, .UP, .M = -311.1087, 0, 311.1087, 0)
+       -1       cons1(2)
+        1       cons1(3)
+       (0)      cons3(2,3)
+
+q(2,4)
+                (.LO, .L, .UP, .M = -311.1087, 0, 311.1087, 0)
+       -1       cons1(2)
+        1       cons1(4)
+       (0)      cons3(2,4)
+
+REMAINING 5 ENTRIES SKIPPED
+
+---- z  
+
+z
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       cost
+
+
+---- h  
+
+h(1)
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       cons2(1)
+        1       cons3(1,2)
+        1       cons5(1)
+
+h(2)
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       cons2(2)
+       -1       cons3(1,2)
+        1       cons3(2,3)
+        1       cons3(2,4)
+
+h(3)
+                (.LO, .L, .UP, .M = -INF, 0, +INF, 0)
+        1       cons2(3)
+       -1       cons3(2,3)
+        1       cons3(3,5)
+
+REMAINING 4 ENTRIES SKIPPED
+GAMS 42.3.0  dacf7d8e Mar 2, 2023           LEX-LEG x86 64bit/Linux - 03/04/23 19:28:21 Page 4
+a Jaltantra model
+Range Statistics    SOLVE m1 Using MINLP From line 59
+
+
+RANGE STATISTICS (ABSOLUTE NON-ZERO FINITE VALUES)
+
+RHS       [min, max] : [ 2.778E+01, 1.000E+03] - Zero values observed as well
+Bound     [min, max] : [ 3.111E+02, 3.111E+02] - Zero values observed as well
+Matrix    [min, max] : [ 1.000E+00, 5.500E+02] - Zero values observed as well
+
+GAMS 42.3.0  dacf7d8e Mar 2, 2023           LEX-LEG x86 64bit/Linux - 03/04/23 19:28:21 Page 5
+a Jaltantra model
+Model Statistics    SOLVE m1 Using MINLP From line 59
+
+
+MODEL STATISTICS
+
+BLOCKS OF EQUATIONS           7     SINGLE EQUATIONS          144
+BLOCKS OF VARIABLES           4     SINGLE VARIABLES          128
+NON ZERO ELEMENTS           497     NON LINEAR N-Z            120
+CODE LENGTH               1,136     CONSTANT POOL              33
+
+
+GENERATION TIME      =        0.004 SECONDS      4 MB  42.3.0 dacf7d8e LEX-LEG
+GAMS 42.3.0  dacf7d8e Mar 2, 2023           LEX-LEG x86 64bit/Linux - 03/04/23 19:28:21 Page 6
+a Jaltantra model
+Solution Report     SOLVE m1 Using MINLP From line 59
+
+
+               S O L V E      S U M M A R Y
+
+     MODEL   m1                  OBJECTIVE  z
+     TYPE    MINLP               DIRECTION  MINIMIZE
+     SOLVER  ALPHAECP            FROM LINE  59
+
+**** SOLVER STATUS     1 Normal Completion
+**** MODEL STATUS      2 Locally Optimal
+**** OBJECTIVE VALUE           403606.7874
+
+ RESOURCE USAGE, LIMIT          1.458       300.000
+ ITERATION COUNT, LIMIT       200    2147483647
+ EVALUATION ERRORS              0             0
+
+AlphaECP         42.3.0 dacf7d8e Mar 2, 2023           LEG x86 64bit/Linux    
+
+*** This solver runs with a community license. No commercial use.
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- EQU cost                .              .              .             EPS         
+
+  cost  objective function
+
+---- EQU bound1  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+1.2.1         -INF             .          1000.0000          .          
+1.2.2         -INF             .          1000.0000          .          
+1.2.3         -INF             .          1000.0000          .          
+1.2.4         -INF             .          1000.0000          .          
+1.2.5         -INF             .          1000.0000          .          
+1.2.6         -INF             .          1000.0000          .          
+1.2.7         -INF             .          1000.0000          .          
+1.2.8         -INF             .          1000.0000          .          
+1.2.9         -INF             .          1000.0000          .          
+1.2.10        -INF             .          1000.0000          .          
+1.2.11        -INF         1000.0000      1000.0000      1000.0000      
+1.2.12        -INF             .          1000.0000          .          
+1.2.13        -INF             .          1000.0000          .          
+1.2.14        -INF             .          1000.0000          .          
+2.3.1         -INF             .          1000.0000          .          
+2.3.2         -INF             .          1000.0000          .          
+2.3.3         -INF             .          1000.0000          .          
+2.3.4         -INF             .          1000.0000          .          
+2.3.5         -INF             .          1000.0000          .          
+2.3.6         -INF             .          1000.0000          .          
+2.3.7         -INF          793.0664      1000.0000       793.0664      
+2.3.8         -INF          206.9336      1000.0000       206.9336      
+2.3.9         -INF             .          1000.0000          .          
+2.3.10        -INF             .          1000.0000          .          
+2.3.11        -INF             .          1000.0000          .          
+2.3.12        -INF             .          1000.0000          .          
+2.3.13        -INF             .          1000.0000          .          
+2.3.14        -INF             .          1000.0000          .          
+2.4.1         -INF             .          1000.0000          .          
+2.4.2         -INF             .          1000.0000          .          
+2.4.3         -INF             .          1000.0000          .          
+2.4.4         -INF             .          1000.0000          .          
+2.4.5         -INF             .          1000.0000          .          
+2.4.6         -INF             .          1000.0000          .          
+2.4.7         -INF             .          1000.0000          .          
+2.4.8         -INF             .          1000.0000          .          
+2.4.9         -INF             .          1000.0000          .          
+2.4.10        -INF         1000.0000      1000.0000      1000.0000      
+2.4.11        -INF             .          1000.0000          .          
+2.4.12        -INF             .          1000.0000          .          
+2.4.13        -INF             .          1000.0000          .          
+2.4.14        -INF             .          1000.0000          .          
+3.5.1         -INF             .          1000.0000          .          
+3.5.2         -INF             .          1000.0000          .          
+3.5.3         -INF             .          1000.0000          .          
+3.5.4         -INF             .          1000.0000          .          
+3.5.5         -INF             .          1000.0000          .          
+3.5.6         -INF           97.8521      1000.0000        97.8521      
+3.5.7         -INF          902.1479      1000.0000       902.1479      
+3.5.8         -INF             .          1000.0000          .          
+3.5.9         -INF             .          1000.0000          .          
+3.5.10        -INF             .          1000.0000          .          
+3.5.11        -INF             .          1000.0000          .          
+3.5.12        -INF             .          1000.0000          .          
+3.5.13        -INF             .          1000.0000          .          
+3.5.14        -INF             .          1000.0000          .          
+4.5.1         -INF         1000.0000      1000.0000      1000.0000      
+4.5.2         -INF             .          1000.0000          .          
+4.5.3         -INF             .          1000.0000          .          
+4.5.4         -INF             .          1000.0000          .          
+4.5.5         -INF             .          1000.0000          .          
+4.5.6         -INF             .          1000.0000          .          
+4.5.7         -INF             .          1000.0000          .          
+4.5.8         -INF             .          1000.0000          .          
+4.5.9         -INF             .          1000.0000          .          
+4.5.10        -INF             .          1000.0000          .          
+4.5.11        -INF             .          1000.0000          .          
+4.5.12        -INF             .          1000.0000          .          
+4.5.13        -INF             .          1000.0000          .          
+4.5.14        -INF             .          1000.0000          .          
+4.6.1         -INF             .          1000.0000          .          
+4.6.2         -INF             .          1000.0000          .          
+4.6.3         -INF             .          1000.0000          .          
+4.6.4         -INF             .          1000.0000          .          
+4.6.5         -INF             .          1000.0000          .          
+4.6.6         -INF             .          1000.0000          .          
+4.6.7         -INF             .          1000.0000          .          
+4.6.8         -INF             .          1000.0000          .          
+4.6.9         -INF          304.7300      1000.0000       304.7300      
+4.6.10        -INF          695.2700      1000.0000       695.2700      
+4.6.11        -INF             .          1000.0000          .          
+4.6.12        -INF             .          1000.0000          .          
+4.6.13        -INF             .          1000.0000          .          
+4.6.14        -INF             .          1000.0000          .          
+6.7.1         -INF             .          1000.0000          .          
+6.7.2         -INF             .          1000.0000          .          
+6.7.3         -INF             .          1000.0000          .          
+6.7.4         -INF             .          1000.0000          .          
+6.7.5         -INF             .          1000.0000          .          
+6.7.6         -INF           10.6054      1000.0000        10.6054      
+6.7.7         -INF          989.3946      1000.0000       989.3946      
+6.7.8         -INF             .          1000.0000          .          
+6.7.9         -INF             .          1000.0000          .          
+6.7.10        -INF             .          1000.0000          .          
+6.7.11        -INF             .          1000.0000          .          
+6.7.12        -INF             .          1000.0000          .          
+6.7.13        -INF             .          1000.0000          .          
+6.7.14        -INF             .          1000.0000          .          
+7.5.1         -INF         1000.0000      1000.0000      1000.0000      
+7.5.2         -INF             .          1000.0000          .          
+7.5.3         -INF             .          1000.0000          .          
+7.5.4         -INF             .          1000.0000          .          
+7.5.5         -INF             .          1000.0000          .          
+7.5.6         -INF             .          1000.0000          .          
+7.5.7         -INF             .          1000.0000          .          
+7.5.8         -INF             .          1000.0000          .          
+7.5.9         -INF             .          1000.0000          .          
+7.5.10        -INF             .          1000.0000          .          
+7.5.11        -INF             .          1000.0000          .          
+7.5.12        -INF             .          1000.0000          .          
+7.5.13        -INF             .          1000.0000          .          
+7.5.14        -INF             .          1000.0000          .          
+
+---- EQU cons1  
+
+         LOWER          LEVEL          UPPER         MARGINAL
+
+1      -311.1087      -311.1087      -311.1087      -311.1087      
+2        27.7777        27.7777        27.7777        27.7777      
+3        27.7770        27.7770        27.7770        27.7770      
+4        33.3330        33.3330        33.3330        33.3330      
+5        75.0000        75.0000        75.0000        75.0000      
+6        91.6660        91.6660        91.6660        91.6660      
+7        55.5550        55.5550        55.5550        55.5550      
+
+---- EQU cons2  
+
+         LOWER          LEVEL          UPPER         MARGINAL
+
+1       210.0000       210.0000        +INF          210.0000      
+2       180.0000       203.2438        +INF          203.2438      
+3       190.0000       190.0000        +INF          190.0000      
+4       185.0000       198.8459        +INF          198.8459      
+5       180.0000       180.0000        +INF          180.0000      
+6       195.0000       195.0000        +INF          195.0000      
+7       190.0000       190.0000        +INF          190.0000      
+
+---- EQU cons3  
+
+           LOWER          LEVEL          UPPER         MARGINAL
+
+1.2          .              .              .       1.332268E-14      
+2.3          .              .              .       1.598721E-14      
+2.4          .              .              .       -2.04281E-14      
+3.5          .              .              .       -8.88178E-15      
+4.5          .              .              .       -4.61853E-14      
+4.6          .              .              .       1.509903E-14      
+6.7          .              .              .       -6.21725E-15      
+7.5          .              .              .       3.552714E-15      
+
+---- EQU cons5  
+
+         LOWER          LEVEL          UPPER         MARGINAL
+
+1       210.0000       210.0000       210.0000       210.0000      
+
+---- EQU cons4  
+
+           LOWER          LEVEL          UPPER         MARGINAL
+
+1.2      1000.0000      1000.0000      1000.0000      1000.0000      
+2.3      1000.0000      1000.0000      1000.0000      1000.0000      
+2.4      1000.0000      1000.0000      1000.0000      1000.0000      
+3.5      1000.0000      1000.0000      1000.0000      1000.0000      
+4.5      1000.0000      1000.0000      1000.0000      1000.0000      
+4.6      1000.0000      1000.0000      1000.0000      1000.0000      
+6.7      1000.0000      1000.0000      1000.0000      1000.0000      
+7.5      1000.0000      1000.0000      1000.0000      1000.0000      
+
+---- VAR l  
+
+              LOWER          LEVEL          UPPER         MARGINAL
+
+1.2.1          EPS            EPS           +INF      1.1328704E+8      
+1.2.2          EPS            EPS           +INF      3873835.6252      
+1.2.3          EPS            EPS           +INF       537565.6380      
+1.2.4          EPS            EPS           +INF       132273.2721      
+1.2.5          EPS            EPS           +INF        18188.8185      
+1.2.6          EPS            EPS           +INF         4336.0633      
+1.2.7          EPS            EPS           +INF         1342.9051      
+1.2.8          EPS            EPS           +INF          461.5830      
+1.2.9          EPS            EPS           +INF          139.5524      
+1.2.10         EPS            EPS           +INF           27.6254      
+1.2.11         EPS         1000.0000        +INF             .          
+1.2.12         EPS            EPS           +INF            4.9615      
+1.2.13         EPS            EPS           +INF          115.5556      
+1.2.14         EPS            EPS           +INF          354.2077      
+2.3.1          EPS            EPS           +INF      2267392.2865      
+2.3.2          EPS            EPS           +INF        77481.7691      
+2.3.3          EPS            EPS           +INF        10709.0181      
+2.3.4          EPS            EPS           +INF         2600.0013      
+2.3.5          EPS            EPS           +INF          321.4924      
+2.3.6          EPS            EPS           +INF           51.0884      
+2.3.7          EPS          793.0664        +INF             .          
+2.3.8          EPS          206.9336        +INF             .          
+2.3.9          EPS            EPS           +INF            3.3544      
+2.3.10         EPS            EPS           +INF           30.5137      
+2.3.11         EPS            EPS           +INF           69.1602      
+2.3.12         EPS            EPS           +INF          108.4589      
+2.3.13         EPS            EPS           +INF          238.0705      
+2.3.14         EPS            EPS           +INF          487.8433      
+2.4.1          EPS            EPS           +INF      3.5030232E+7      
+2.4.2          EPS            EPS           +INF      1197789.3222      
+2.4.3          EPS            EPS           +INF       166159.3516      
+2.4.4          EPS            EPS           +INF        40838.0559      
+2.4.5          EPS            EPS           +INF         5564.6352      
+2.4.6          EPS            EPS           +INF         1285.9606      
+2.4.7          EPS            EPS           +INF          366.6417      
+2.4.8          EPS            EPS           +INF          106.5558      
+2.4.9          EPS            EPS           +INF           13.8863      
+2.4.10         EPS         1000.0000        +INF             .          
+2.4.11         EPS            EPS           +INF           19.0891      
+2.4.12         EPS            EPS           +INF           48.2546      
+2.4.13         EPS            EPS           +INF          172.2539      
+2.4.14         EPS            EPS           +INF          418.7450      
+3.5.1          EPS            EPS           +INF       339582.8794      
+3.5.2          EPS            EPS           +INF        11582.2077      
+3.5.3          EPS            EPS           +INF         1583.5837      
+3.5.4          EPS            EPS           +INF          371.5717      
+3.5.5          EPS            EPS           +INF           34.5494      
+3.5.6          EPS           97.8521        +INF             .          
+3.5.7          EPS          902.1479        +INF             .          
+3.5.8          EPS            EPS           +INF           15.3040      
+3.5.9          EPS            EPS           +INF           24.3086      
+3.5.10         EPS            EPS           +INF           53.8831      
+3.5.11         EPS            EPS           +INF           93.6804      
+3.5.12         EPS            EPS           +INF          133.5754      
+3.5.13         EPS            EPS           +INF          263.5172      
+3.5.14         EPS            EPS           +INF          513.4832      
+4.5.1          EPS         1000.0000        +INF             .          
+4.5.2          EPS            EPS           +INF            2.9814      
+4.5.3          EPS            EPS           +INF            5.9808      
+4.5.4          EPS            EPS           +INF            8.9807      
+4.5.5          EPS            EPS           +INF           13.9807      
+4.5.6          EPS            EPS           +INF           20.9807      
+4.5.7          EPS            EPS           +INF           29.9807      
+4.5.8          EPS            EPS           +INF           47.9807      
+4.5.9          EPS            EPS           +INF           57.9807      
+4.5.10         EPS            EPS           +INF           87.9807      
+4.5.11         EPS            EPS           +INF          127.9807      
+4.5.12         EPS            EPS           +INF          167.9807      
+4.5.13         EPS            EPS           +INF          297.9807      
+4.5.14         EPS            EPS           +INF          547.9807      
+4.6.1          EPS            EPS           +INF      2.3946113E+7      
+4.6.2          EPS            EPS           +INF       818763.9180      
+4.6.3          EPS            EPS           +INF       113558.0943      
+4.6.4          EPS            EPS           +INF        27891.2857      
+4.6.5          EPS            EPS           +INF         3780.4865      
+4.6.6          EPS            EPS           +INF          857.8636      
+4.6.7          EPS            EPS           +INF          232.2787      
+4.6.8          EPS            EPS           +INF           60.1834      
+4.6.9          EPS          304.7300        +INF             .          
+4.6.10         EPS          695.2700        +INF             .          
+4.6.11         EPS            EPS           +INF           25.7056      
+4.6.12         EPS            EPS           +INF           58.2993      
+4.6.13         EPS            EPS           +INF          184.1974      
+4.6.14         EPS            EPS           +INF          431.7987      
+6.7.1          EPS            EPS           +INF       339582.8794      
+6.7.2          EPS            EPS           +INF        11582.2077      
+6.7.3          EPS            EPS           +INF         1583.5837      
+6.7.4          EPS            EPS           +INF          371.5717      
+6.7.5          EPS            EPS           +INF           34.5494      
+6.7.6          EPS           10.6054        +INF             .          
+6.7.7          EPS          989.3946        +INF             .          
+6.7.8          EPS            EPS           +INF           15.3040      
+6.7.9          EPS            EPS           +INF           24.3086      
+6.7.10         EPS            EPS           +INF           53.8831      
+6.7.11         EPS            EPS           +INF           93.6804      
+6.7.12         EPS            EPS           +INF          133.5754      
+6.7.13         EPS            EPS           +INF          263.5172      
+6.7.14         EPS            EPS           +INF          513.4832      
+7.5.1          EPS         1000.0000        +INF             .          
+7.5.2          EPS            EPS           +INF            3.0551      
+7.5.3          EPS            EPS           +INF            6.0568      
+7.5.4          EPS            EPS           +INF            9.0570      
+7.5.5          EPS            EPS           +INF           14.0571      
+7.5.6          EPS            EPS           +INF           21.0571      
+7.5.7          EPS            EPS           +INF           30.0571      
+7.5.8          EPS            EPS           +INF           48.0571      
+7.5.9          EPS            EPS           +INF           58.0571      
+7.5.10         EPS            EPS           +INF           88.0571      
+7.5.11         EPS            EPS           +INF          128.0571      
+7.5.12         EPS            EPS           +INF          168.0571      
+7.5.13         EPS            EPS           +INF          298.0571      
+7.5.14         EPS            EPS           +INF          548.0571      
+
+---- VAR q  
+
+           LOWER          LEVEL          UPPER         MARGINAL
+
+1.2      -311.1087       311.1087       311.1087          .          
+2.3      -311.1087       102.3139       311.1087          .          
+2.4      -311.1087       181.0171       311.1087          .          
+3.5      -311.1087        74.5369       311.1087          .          
+4.5      -311.1087         0.2708       311.1087          .          
+4.6      -311.1087       147.4133       311.1087          .          
+6.7      -311.1087        55.7473       311.1087          .          
+7.5      -311.1087         0.1923       311.1087          .          
+
+                           LOWER          LEVEL          UPPER         MARGINAL
+
+---- VAR z                 -INF       403606.7874        +INF             .          
+
+---- VAR h  
+
+         LOWER          LEVEL          UPPER         MARGINAL
+
+1        -INF          210.0000        +INF             .          
+2        -INF          203.2438        +INF             .          
+3        -INF          190.0000        +INF             .          
+4        -INF          198.8459        +INF             .          
+5        -INF          180.0000        +INF             .          
+6        -INF          195.0000        +INF             .          
+7        -INF          190.0000        +INF             .          
+
+
+**** REPORT SUMMARY :        0     NONOPT
+                             0 INFEASIBLE
+                             0  UNBOUNDED
+                             0     ERRORS
+
+
+EXECUTION TIME       =        1.468 SECONDS      4 MB  42.3.0 dacf7d8e LEX-LEG
+
+
+USER: GAMS Community License for Manal Jain          G230303|0002AO-GEN
+      Indian Institute of Technology (IIT) Bombay, Computer ScienCL5366
+      License for teaching and research at degree granting institutions
+
+
+**** FILE SUMMARY
+
+Input      /home/manal/Downloads/MTP/JalTantra-Code-and-Scripts/Files/Models/GAMS/m1/m1d1.gms
+Output     /home/manal/Downloads/MTP/JalTantra-Code-and-Scripts/Files/Models/GAMS/m1/m1d1.lst
