@@ -497,7 +497,7 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
     def __alphaecp_extract_output_table(self, std_out_err_file_path: str) -> str:
         return run_command_get_output(f"bash output_table_extractor_baron.sh '{std_out_err_file_path}'", '')
 
-    def gams_to_ampl_parser(self,gams_file_path, output_file_path):
+    def gams_to_ampl_parser_m1(self,gams_file_path, output_file_path):
 
         try:
             gams_file_text = open(gams_file_path, 'r').read()
@@ -616,6 +616,142 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
             g_logger.error(f'CHECKME: {type(e)}, error:\n{e}')
             g_logger.info("There was some error while parsing the gams output file")
 
+    def gams_to_ampl_parser_m2(self,gams_file_path, output_file_path):
+
+        gams_file_text = open(gams_file_path, 'r').read()
+        output_file_txt = open(output_file_path, 'w')
+
+        h_variable = "---- VAR h"
+        q1_variable = "---- VAR q1"
+        q2_variable = "---- VAR q2"
+        l_variable = "---- VAR l"
+
+        # READ FILE
+        df = open(gams_file_path)
+
+        # read file
+        read = df.read()
+
+        # return cursor to the beginning of the file.
+        df.seek(0)
+        read
+
+        arr = []  # will store all the lines
+
+        # count number of lines in the file
+        line = 1
+        for word in read:
+            if word == '\n':
+                line += 1
+
+        for i in range(line):
+            # readline() method,
+            # reads one line at
+            # a time
+            arr.append(df.readline())
+
+        h_variable_start = 0
+        h_variable_end = 0
+        q1_variable_start = 0
+        q1_variable_end = 0
+        q2_variable_start = 0
+        q2_variable_end = 0
+        l_variable_start = 0
+        l_variable_end = 0
+        for i in range(len(arr)):
+
+            if h_variable in arr[i]:
+                q2_variable_end = i - 4
+                h_variable_start = i + 4
+
+            if "**** REPORT SUMMARY" in arr[i]:
+                h_variable_end = i - 1
+
+            if q2_variable in arr[i]:
+                q2_variable_start = i + 4
+                q1_variable_end = i - 1
+
+            if l_variable in arr[i]:
+                l_variable_start = i + 4
+
+            if q1_variable in arr[i]:
+                q1_variable_start = i + 4
+                l_variable_end = i - 1
+
+        print(q1_variable_start, q1_variable_end)
+        print(q2_variable_start, q2_variable_end)
+
+        total_execution_time = re.search(r'EXECUTION TIME\s+=\s+(\d+\.\d+) SECONDS', gams_file_text, re.M).group(1)
+        output_file_txt.write(f'_total_solve_time = {total_execution_time}\n\n')
+
+        # printing head values
+        output_file_txt.write("h[i] [*] :=\n")
+        for i in range(h_variable_start, h_variable_end - 1):
+            line = arr[i].strip().split()
+            head_value = float(line[2])
+            output_file_txt.write(f'{line[0]}  {head_value}\n')
+        output_file_txt.write(';\n\n')
+
+        # printing flow values
+        output_file_txt.write(":         q1[i,j]       q2[i,j]      :=\n")
+        flow_dict = {}
+        min_length = 6
+        for i in range(q1_variable_start, q1_variable_end - 1):
+            line = arr[i].strip().split()
+            length = len(line)
+            min_length = min(min_length, length)
+
+        for i in range(q1_variable_start, q1_variable_end - 1):
+            line = arr[i].strip().split()
+            srcToDest = ''
+            for j in range(0, len(line) - min_length + 1):
+                srcToDest += line[j]
+            if line[(len(line)) - 3] != '.':
+                flow_dict[srcToDest] = line[(len(line)) - 3]
+
+        for i in range(q2_variable_start, q2_variable_end - 1):
+            line = arr[i].strip().split()
+            srcToDest = ''
+            for j in range(0, len(line) - min_length + 1):
+                srcToDest += line[j]
+            if srcToDest not in flow_dict.keys():
+                srcToDest = srcToDest.split('.')
+                output_file_txt.write(f'{srcToDest[0]} {srcToDest[1]}\t\t0\t\t{line[(len(line)) - 3]}\n')
+            else:
+                flow_value = flow_dict[srcToDest]
+                srcToDest = srcToDest.split('.')
+                output_file_txt.write(f'{srcToDest[0]} {srcToDest[1]}\t\t{flow_value}\t\t0\n')
+
+        output_file_txt.write(';\n\n')
+
+        # printing length values
+        output_file_txt.write("l[i,j,k] :=\n")
+        min_length = 7
+        # print(l_variable_start,l_variable_end)
+        for i in range(l_variable_start, l_variable_end):
+            line = arr[i].strip().split()
+            length = len(line)
+            min_length = min(min_length, length)
+
+        for i in range(l_variable_start, l_variable_end):
+            line = arr[i].strip().split()
+            if line[len(line) - 3] == '.':
+                continue
+            links = ''
+            for j in range(0, len(line) - min_length + 1):
+                links += line[j]
+            links = links.split('.')
+            length_value = float(line[len(line) - 3])
+            output_file_txt.write(f'{links[0]}  {links[1]}  {links[2]}\t{length_value}\n')
+        output_file_txt.write(';\n\n')
+
+        output_file_txt.write(f'_total_solve_time = {total_execution_time}\n\n')
+
+        # **** OBJECTIVE VALUE
+        best_solution = re.search(r"\*\*\*\* OBJECTIVE VALUE\s+([0-9]+\.[0-9]+)", gams_file_text, re.M).group(
+            1)  # if there is no value then 'NoneType' object has no attribute 'group'
+        output_file_txt.write(f'total_cost = {best_solution}')
+
     def check_errors(self, exec_info: 'NetworkExecutionInformation') -> Tuple[bool, str]:
         """By default, it is assumed that everything is ok (i.e. error free)"""
 
@@ -642,14 +778,49 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
             os.replace(copy_source_file, destination_address)
             g_logger.info(f'gams output has been moved. os.replace({copy_source_file}, {destination_address})')
 
+            gams_output_file = open(destination_address,'r').read()
+
+            gams_licensing_error = re.search(r"Terminated due to a licensing error", gams_output_file)
+            if gams_licensing_error:
+                return False,"Terminated due to licensing error"
+
+            solver_status = re.search(r"SOLVER STATUS\s+(\d+)", gams_output_file).group(1)
+
+            model_status = re.search(r"MODEL STATUS\s+(\d+)", gams_output_file).group(1)
+
+            if model_status == 4:
+                return False,"Solution was infeasible"
+            if model_status == 13:
+                return False,"An error occurred and no solution has been returned"
+
+            g_logger.info(f'{destination_address} Solver status : {solver_status}')
+
             g_logger.info("replacing current error file with desired format")
 
             current_std_error = exec_info.uniq_std_out_err_file_path
             rename_std_out_err = f'{output_file_directory}/gams_terminal_output.txt'
-            os.rename(current_std_error , rename_std_out_err)
+            shutil.copy(current_std_error, rename_std_out_err)
 
-            copy_source_file_path=f'{output_file_directory}/{copy_source_file}'
-            self.gams_to_ampl_parser(copy_source_file_path,current_std_error)
+            g_logger.info("gams terminal output has been changed to std_err_out file and std_err_out has been deleted")
+
+            try:
+                os.remove(current_std_error)
+                g_logger.info("lst files has been deleted")
+            except OSError as e:
+                print("Error while deleting the gams output file. Erorr : %s - %s." % (e.filename, e.strerror))
+
+            copy_source_file_path = f'{output_file_directory}/{copy_source_file}'
+            if model_name == 'm1':
+                self.gams_to_ampl_parser_m1(copy_source_file_path,current_std_error)
+            else:
+                self.gams_to_ampl_parser_m2(copy_source_file_path, current_std_error)
+
+        #     delete the .lst file after processing for 1 hr
+            if prefix == '1hour':
+                try:
+                    os.remove(source_file)
+                except OSError as e:
+                    print("Error while deleting the gams output file. Erorr : %s - %s." % (e.filename, e.strerror))
 
         except Exception as e:
             g_logger.error(f'CHECKME: {type(e)}, error:\n{e}')
