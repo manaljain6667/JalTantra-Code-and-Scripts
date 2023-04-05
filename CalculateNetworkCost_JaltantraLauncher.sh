@@ -16,6 +16,7 @@ FILE_PATH=$(dirname "$0")
 cd "${FILE_PATH}"
 
 LOG_FILE='log_jaltantra_CalculateNetworkCost_JaltantraLauncher.log'
+#MINICONDA_HOME='/home/fenil/miniconda3'
 MINICONDA_HOME='/home/manal/miniconda3'
 
 echo >> "${LOG_FILE}"
@@ -50,7 +51,7 @@ if [[ -f "${1}" ]]; then
     conda activate dev
 
     # REFER: https://stackoverflow.com/questions/876239/how-to-redirect-and-append-both-standard-output-and-standard-error-to-a-file-wit
-    "${MINICONDA_HOME}/envs/dev/bin/python3" CalculateNetworkCost.py -p "${1}"  --solver-models 'alphaecp 1 2' --solver-models 'octeract 1 2' --solver-models 'baron 1 2' --time "${2}" --prefix "${3}" --debug > "${1}${3}.log" 2>&1
+    "${MINICONDA_HOME}/envs/dev/bin/python3" CalculateNetworkCost.py -p "${1}"  --solver-models 'alphaecp 1 2' --solver-models 'octeract 1 2' --solver-models 'baron 1 2' --solver-models 'knitro 1 2' --time "${2}" --prefix "${3}" --debug > "${1}${3}.log" 2>&1
 else
     echo "ERROR: either file does not exist or it is not a file: '${1}'" >> "${LOG_FILE}"
 fi

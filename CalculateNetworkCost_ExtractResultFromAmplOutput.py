@@ -48,6 +48,7 @@ if len(sys.argv) <= 3:
 IN_STD_OUT_ERR_FILE_PATH = sys.argv[1]
 IN_NETWORK_FILE_PATH = sys.argv[2]
 IN_ARC_LEN_ERROR_THRESHOLD = float(sys.argv[3])
+#IN_ARC_LEN_ERROR_THRESHOLD = 0
 if not os.path.isfile(IN_STD_OUT_ERR_FILE_PATH):
     print(f"ERROR: No such file: '{IN_STD_OUT_ERR_FILE_PATH}'")
     exit(1)
@@ -140,7 +141,60 @@ network_file_data = output.splitlines(keepends=False)
 del ok, output
 
 arcs_table_start_flag = False
+omega = 10.68
+diameter_table_start_flag = False
+roughness_table_start_flag = False
+pressure_table_start_flag = False
+elevation_table_start_flag = False
+pressure_dict = {}
+elevation_dict = {}
+diameter_list = []
+roughness_list = []
+source_node_of_network = None
 expected_arc_len: Dict[Tuple[int, int], float] = dict()
+
+# Sub-step 4.2 : Get Diameter data for constraint checking :
+for line in network_file_data:
+    line = line.strip()
+    cols = line.rstrip(';').split()
+    if diameter_table_start_flag:
+        diameter_list.append(float(cols[1]))
+        if ';' in line:
+            diameter_table_start_flag = False
+    if roughness_table_start_flag:
+        roughness_list.append(float(cols[1]))
+        if ';' in line:
+            roughness_table_start_flag = False
+    if pressure_table_start_flag:
+        pressure_dict[int(cols[0])] = float(cols[1])
+        if ';' in line:
+            pressure_table_start_flag = False
+    if elevation_table_start_flag:
+        elevation_dict[int(cols[0])] = float(cols[1])
+        if ';' in line:
+            elevation_table_start_flag = False
+
+    # Regular expression checking for Diameter ->
+    if type(line) is str and re.search(r'param\s*d', line):
+        diameter_table_start_flag = True
+        continue
+    # Regular expression checking for roughness ->
+    if type(line) is str and re.search(r'param\s*R', line):
+        roughness_table_start_flag = True
+        continue
+    # Regular expression checking for Pressure ->
+    if type(line) is str and re.search(r'param\s*P', line):
+        pressure_table_start_flag = True
+        continue
+    # Regular expression checking for Elevation ->
+    if type(line) is str and re.search(r'param\s*E', line):
+        elevation_table_start_flag = True
+        continue
+    if type(line) is str and re.search(r'param\s*Source', line):
+        source_node_of_network = int(cols[3])
+        continue
+
+# Getting expected arc lengths :
 for line in network_file_data:
     line = line.strip()
     if arcs_table_start_flag:
@@ -156,9 +210,22 @@ for line in network_file_data:
         arcs_table_start_flag = True
         continue
 
-del network_file_data, arcs_table_start_flag, line
+del network_file_data, arcs_table_start_flag, line, diameter_table_start_flag, roughness_table_start_flag
 
-# Step 5: Fix the rounding error issues due to floating point numbers
+# Step 5: Check if all constraints are satisfied :
+# Step 5.1 : Constraint-1 (FLow constraint) ->
+# sum{i in nodes : (i,j) in arcs}q[i,j] = sum{i in nodes : (j,i) in arcs}q[j,i] + D[j];
+
+# Step 5.2 : Constraint-2 (Min. Pressure constraint) -> h[i] >= E[i] + P[i];
+for node_id, head in calculated_head.items():
+    if head < pressure_dict[node_id] - elevation_dict[node_id]:
+        print( f'ERROR Violation of Min. Pressure Constraint with {node_id=}, {head=}, '
+               f'pressure = {pressure_dict[node_id]}, '
+               f'elevation = {elevation_dict[node_id]=}', file=sys.stderr)
+        exit(1)
+
+# Step 5.4 : Constraint-4 (Length constraint) ->  sum{k in pipes} l[i,j,k] = L[i,j];
+# Also fix the rounding error issues due to floating point numbers here
 for arc, pipes in calculated_arc_len.items():
     pipe_len_sum = sum([pipe_len for pipe_id, pipe_len in pipes])
     if abs(expected_arc_len[arc] - pipe_len_sum) > IN_ARC_LEN_ERROR_THRESHOLD:
@@ -169,15 +236,31 @@ for arc, pipes in calculated_arc_len.items():
     if pipe_len_sum != expected_arc_len[arc]:
         print(f'INFO : FIXING: {arc=}, {pipes=}, {pipe_len_sum=}, {expected_arc_len[arc]=}', file=sys.stderr)
         calculated_arc_len[arc][-1][-1] += (expected_arc_len[arc] - pipe_len_sum)
-
 del expected_arc_len, arc, pipes, pipe_len_sum
 
-# NOTE: We can also check for errors in calculated `flow variable` from the `demand` present in data file
+# Step 5.5 : Constraint-5 (Source constraint) -> h[Source] = E[Source]
+if calculated_head[source_node_of_network] != elevation_dict[source_node_of_network]:
+    print(f'ERROR Violation of Source Constraint with {arc=}, Head  = {head[source_node_of_network]}, '
+          f'elevation = {elevation_dict[source_node_of_network]}', file=sys.stderr)
+    exit(1)
 
-# ---
+# Step 5.3 : Constraint-3 (Head loss constraint) ->
+# h[i] - h[j] = (q[i,j]*abs(q[i,j])^0.852)*(0.001^1.852)*sum{k in pipes}omega*l[i,j,k]/((R[k]^1.852)*(d[k]/1000)^4.87);
+for arc, pipes in calculated_arc_len.items():
+    head_source = calculated_head[arc[0]]
+    head_destination = calculated_head[arc[1]]
+    left_hand_side = float(head_source - head_destination)
+    flow_inbetween = calculated_flow[arc]
+    right_hand_side = 0.0
+    for pipe_id, pipe_len in pipes:
+        right_hand_side += (flow_inbetween * (abs(flow_inbetween)**0.852) * (0.001 ** 1.852) * omega * pipe_len) / ((roughness_list[pipe_id]**1.852) * (diameter_list[pipe_id]/1000)**4.87)
+    if abs(left_hand_side - right_hand_side) > IN_ARC_LEN_ERROR_THRESHOLD:
+        print(f'ERROR Violation of Head Constraint with {arc=}, Head difference = {left_hand_side}, '
+              f'Head Loss =  {right_hand_side}', file=sys.stderr)
+        exit(1)
 
 # Step 6: Print the output in a format similar to Competitive Programming
-#         question for further processing by the caller of this program
+#         question for further prteessing by the caller of this program
 print('DEBUG:', calculated_head, file=sys.stderr)
 print('DEBUG:', calculated_flow, file=sys.stderr)
 print('DEBUG:', calculated_arc_len, file=sys.stderr)

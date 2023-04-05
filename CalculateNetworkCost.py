@@ -488,6 +488,170 @@ class SolverOutputAnalyzerBaron(SolverOutputAnalyzerParent):
         # noinspection PyUnreachableCode
         return False, file_to_parse, objective_value, 'FIXME: Unhandled unknown case'
 
+class SolverOutputAnalyzerKnitro(SolverOutputAnalyzerParent):
+    pass
+    r"""
+    ### Baron - v21.1.13
+
+    ```sh
+    console
+      # Refer the analysis of `sum.lst` for things before execution of Control-C
+      BARON: Cntrl-C Abort
+      BARON 21.1.13 (2021.01.13): Interrupted by Control-C; objective (numberRegex)
+      Retaining scratch directory "/tmp/baron_tmp15378".
+
+    /tmp/baron_tmp15378/sum.lst - Exact copy of console output (output after ctrl+c is not present in this file)
+      67: Doing local search
+      68: Preprocessing found feasible solution with value  (numberRegex)
+      71: Estimated remaining time for local search is [0-9]+ secs
+      72: Estimated remaining time for local search is [0-9]+ secs
+      73: Done with local search
+      75:  Iteration    Open nodes         Time (s)    Lower bound      Upper bound
+
+    /tmp/baron_tmp15378/res.lst - Detailed output / logging of the execution and its status
+      67: Doing local search
+      68: >>> Preprocessing found feasible solution
+      69: >>> Objective value is:           (numberRegex)
+      6718:The best solution found is:
+      9659:The above solution has an objective value of:  ([0-9]+|([0-9]+)?\.[0-9]|[0-9]+(e|E)(\+)?[0-9]+)
+
+    /tmp/baron_tmp15378/amplmodel.bar - lower bounds, upper bounds, constraints and objective (minimize/maximize) value/expression/equation/inequality with values substituted
+
+    /tmp/baron_tmp15378/dictionary.txt - I did not understand much
+    ```
+    """
+
+    def __init__(self, engine_path: str, engine_options: str, threads: int):
+        process_name_to_stop_using_ctrl_c = 'knitro'
+        super().__init__(engine_path, engine_options, process_name_to_stop_using_ctrl_c)
+
+    def __knitro_extract_output_table(self, std_out_err_file_path: str) -> str:
+        return run_command_get_output(f"bash output_table_extractor_knitro.sh '{std_out_err_file_path}'", '')
+
+    def extract_best_solution(self, exec_info: 'NetworkExecutionInformation') -> Tuple[bool, float]:
+        # Extract the solution from the std_out_err file using the value printed by the AMPL commands:
+        #     option display_precision 0;
+        #     display total_cost;
+        try:
+            file_txt = open(exec_info.uniq_std_out_err_file_path, 'r').read()
+            best_solution = re.search(r'^total_cost\s*=\s*(.*)$', file_txt, re.M).group(1)
+            # Find if knitro returned correct output
+            # feasibility_error = re.search()
+            best_solution = float(best_solution)
+            ok = True
+            if best_solution == 0 or best_solution > 1e40:
+                g_logger.warning(f"Probably an infeasible solution found by Baron: '{best_solution}'")
+                g_logger.info(f'Instance={exec_info}')
+                ok = False
+            return ok, best_solution
+        except Exception as e:
+            g_logger.error(f'CHECKME: {type(e)}, error:\n{e}')
+            g_logger.debug('Probably, Knitro did not terminate immediately even after receiving the appropriate signal')
+
+        g_logger.info('Using fallback mechanism to extract the best solution')
+
+        csv = self.__knitro_extract_output_table(exec_info.uniq_std_out_err_file_path)
+        if csv == '':
+            return False, 0.0
+        lines = csv.split('\n')
+        lines = [line for line in lines if line != ',' and (not line.startswith('Processing file'))]
+        g_logger.debug(f'{lines=}')
+
+        ok = len(lines) > 0
+        best_solution = 0.0
+        if len(lines) > 0:
+            best_solution = float(lines[-1].split(',')[1])
+        if best_solution > 1e40:
+            g_logger.warning(f"Probably an infeasible solution found by Knitro: '{lines[-1]}'")
+            g_logger.info(f'Instance={exec_info}')
+            ok = False
+        return ok, best_solution
+
+    def check_solution_found(self, exec_info: 'NetworkExecutionInformation') -> bool:
+        return self.extract_best_solution(exec_info)[0]
+
+    def check_errors(self, exec_info: 'NetworkExecutionInformation') -> Tuple[bool, str]:
+        file_txt = open(exec_info.uniq_std_out_err_file_path, 'r').read()
+
+        ok, err_msg = self.ampl_check_errors(file_txt)
+        if not ok:
+            return ok, err_msg
+
+        try:
+            err_idx = file_txt.index('Sorry, a demo license is limited to 10 variables')
+            err_msg = file_txt[err_idx:file_txt.index('exit value 1', err_idx)].replace('\n', ' ').strip()
+            g_logger.debug(err_msg)
+            return False, err_msg
+        except ValueError:
+            pass  # substring not found
+
+        try:
+            err_idx = re.search(r'''Can't\s+find\s+file\s+['"]?.+['"]?''', file_txt).start()
+            g_logger.debug(file_txt[err_idx:])
+            return False, file_txt[err_idx:]
+        except AttributeError as e:
+            # re.search returned None
+            g_logger.debug(f'{type(e)}: {e}')
+            g_logger.debug(f'{exec_info.uniq_std_out_err_file_path=}')
+        except Exception as e:
+            g_logger.error(f'FIXME: {type(e)}:\n{e}')
+
+        # Checking if Knitro bugged :
+        try:
+            err_idx = re.search(r'''1\.8(?:0?)e\+308''', file_txt).start()
+            g_logger.debug("KNitro Bug found")
+            return False, file_txt[err_idx:]
+        except Exception as e:
+            # re.search returned None
+            g_logger.debug(f'{type(e)}: {e}')
+            g_logger.debug(f'{exec_info.uniq_std_out_err_file_path=}')
+
+        if 'No feasible solution was found' in file_txt or 'infeasible' in file_txt:
+            return False, 'No feasible solution was found'
+
+        return True, 'No Errors'
+
+    def __baron_extract_solution_file_path(self, exec_info: 'NetworkExecutionInformation') -> Tuple[bool, str]:
+        file_txt = open(exec_info.uniq_std_out_err_file_path, 'r').read()
+        solution_dir_name = re.search(r'Retaining scratch directory "/tmp/(.+)"\.', file_txt).group(1)
+        if solution_dir_name == '':
+            return False, 'RegEx search failed'
+        return True, (pathlib.Path(exec_info.aes.OUTPUT_DIR_LEVEL_1_DATA) / solution_dir_name / 'res.lst').resolve()
+
+    def extract_solution_vector(self, exec_info: 'NetworkExecutionInformation') -> Tuple[bool, str, float, str]:
+        ok, file_to_parse = self.__baron_extract_solution_file_path(exec_info)
+        if not ok:
+            return False, file_to_parse, float('nan'), 'Failed to extract solution file path'
+        file_txt = open(file_to_parse, 'r').read()
+        objective_value = 'NotDefined'
+        try:
+            objective_value = re.search(r'The above solution has an objective value of:(.+)', file_txt).group(1).strip()
+            objective_value = float(objective_value)
+        except Exception as e:
+            g_logger.error(f'Exception e:\n{e}')
+            return False, file_to_parse, float('nan'), f"Objective value (='{objective_value}') RegEx search failed " \
+                                                       f"(Probably: no feasible solution was found)"
+        try:
+            # The lines from '^The best solution found is.+' till the End Of File
+            # idx = file_txt.index('The best solution found is:')
+            idx_start = re.search(r'variable\s*xlo\s*xbest\s*xup', file_txt).end()
+            idx_end = re.search(r'The above solution has an objective value of', file_txt).start()
+            solution_vector_list = list()
+            for line in file_txt[idx_start:idx_end].strip().splitlines(keepends=False):
+                vals = line.strip().split()
+                solution_vector_list.append(f'{vals[0]}: {vals[2]}')  # Variable Name, Best Value
+            return True, file_to_parse, objective_value, '\n'.join(solution_vector_list)
+        except AttributeError as e:
+            # re.search returned None
+            g_logger.debug(f'{type(e)}: {e}')
+            g_logger.debug(f'{exec_info.uniq_std_out_err_file_path=}')
+            return False, file_to_parse, objective_value, 'Solution vector RegEx search failed'
+        except Exception as e:
+            g_logger.error(f'FIXME: {type(e)}:\n{e}')
+        # noinspection PyUnreachableCode
+        return False, file_to_parse, objective_value, 'FIXME: Unhandled unknown case'
+
+
 class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
 
     def __init__(self, engine_path: str, engine_options: str, threads: int):
@@ -586,21 +750,14 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
             output_file_txt.write("l[i,j,k] :=\n")
             min_length = 7
             # print(l_variable_start,l_variable_end)
-            for i in range(l_variable_start, l_variable_end):
-                line = arr[i].strip().split()
-                length = len(line)
-                min_length = min(min_length, length)
 
             for i in range(l_variable_start, l_variable_end):
+                links = re.findall(r'(\d+)\s*\.(\d+)\s*\.(\d+)', arr[i])
                 line = arr[i].strip().split()
                 if line[len(line) - 3] == '.':
                     continue
-                links = ''
-                for j in range(0, len(line) - min_length + 1):
-                    links += line[j]
-                links = links.split('.')
                 length_value = float(line[len(line) - 3])
-                output_file_txt.write(f'{links[0]}  {links[1]}  {links[2]}\t{length_value}\n')
+                output_file_txt.write(f'{links[0][0]}  {links[0][1]}  {links[0][2]}\t{length_value}\n')
             output_file_txt.write(';\n\n')
 
             output_file_txt.write(f'_total_solve_time = {total_execution_time}\n\n')
@@ -617,7 +774,6 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
             g_logger.info("There was some error while parsing the gams output file")
 
     def gams_to_ampl_parser_m2(self,gams_file_path, output_file_path):
-
         gams_file_text = open(gams_file_path, 'r').read()
         output_file_txt = open(output_file_path, 'w')
 
@@ -678,8 +834,8 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
                 q1_variable_start = i + 4
                 l_variable_end = i - 1
 
-        print(q1_variable_start, q1_variable_end)
-        print(q2_variable_start, q2_variable_end)
+        # print(q1_variable_start , q1_variable_end)
+        # print(q2_variable_start , q2_variable_end)
 
         total_execution_time = re.search(r'EXECUTION TIME\s+=\s+(\d+\.\d+) SECONDS', gams_file_text, re.M).group(1)
         output_file_txt.write(f'_total_solve_time = {total_execution_time}\n\n')
@@ -696,18 +852,23 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
         output_file_txt.write(":         q1[i,j]       q2[i,j]      :=\n")
         flow_dict = {}
         min_length = 6
-        for i in range(q1_variable_start, q1_variable_end - 1):
+        for i in range(q1_variable_start, q1_variable_end):
             line = arr[i].strip().split()
             length = len(line)
             min_length = min(min_length, length)
 
-        for i in range(q1_variable_start, q1_variable_end - 1):
+        # print(min_length)
+
+        for i in range(q1_variable_start, q1_variable_end):
             line = arr[i].strip().split()
             srcToDest = ''
             for j in range(0, len(line) - min_length + 1):
                 srcToDest += line[j]
+            # print(srcToDest)
             if line[(len(line)) - 3] != '.':
                 flow_dict[srcToDest] = line[(len(line)) - 3]
+
+        # print(flow_dict)
 
         for i in range(q2_variable_start, q2_variable_end - 1):
             line = arr[i].strip().split()
@@ -728,28 +889,20 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
         output_file_txt.write("l[i,j,k] :=\n")
         min_length = 7
         # print(l_variable_start,l_variable_end)
-        for i in range(l_variable_start, l_variable_end):
-            line = arr[i].strip().split()
-            length = len(line)
-            min_length = min(min_length, length)
 
         for i in range(l_variable_start, l_variable_end):
+            links = re.findall(r'(\d+)\s*\.(\d+)\s*\.(\d+)', arr[i])
             line = arr[i].strip().split()
             if line[len(line) - 3] == '.':
                 continue
-            links = ''
-            for j in range(0, len(line) - min_length + 1):
-                links += line[j]
-            links = links.split('.')
             length_value = float(line[len(line) - 3])
-            output_file_txt.write(f'{links[0]}  {links[1]}  {links[2]}\t{length_value}\n')
+            output_file_txt.write(f'{links[0][0]}  {links[0][1]}  {links[0][2]}\t{length_value}\n')
         output_file_txt.write(';\n\n')
 
         output_file_txt.write(f'_total_solve_time = {total_execution_time}\n\n')
 
         # **** OBJECTIVE VALUE
-        best_solution = re.search(r"\*\*\*\* OBJECTIVE VALUE\s+([0-9]+\.[0-9]+)", gams_file_text, re.M).group(
-            1)  # if there is no value then 'NoneType' object has no attribute 'group'
+        best_solution = re.search(r"\*\*\*\* OBJECTIVE VALUE\s+([0-9]+\.[0-9]+)", gams_file_text, re.M).group(1)  # if there is no value then 'NoneType' object has no attribute 'group'
         output_file_txt.write(f'total_cost = {best_solution}')
 
     def check_errors(self, exec_info: 'NetworkExecutionInformation') -> Tuple[bool, str]:
@@ -837,9 +990,10 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
         try:
             file_txt = open(exec_info.uniq_std_out_err_file_path, 'r').read()
             best_solution = re.search(r'^total_cost\s*=\s*(.*)$', file_txt, re.M).group(1)
+            best_solution_string = str(best_solution)
             best_solution = float(best_solution)
             ok = True
-            if best_solution == 0 or best_solution > 1e40:
+            if best_solution == 0 or best_solution > 1e40 or len(best_solution_string) == 0:
                 g_logger.warning(f"Probably an infeasible solution found by alphaecp: '{best_solution}'")
                 g_logger.info(f'Instance={exec_info}')
                 ok = False
@@ -1124,7 +1278,7 @@ class AutoExecutorSettings:
     # is done because this will be executed in a fashion similar to `./a.out`
     AMPL_PATH = './ampl.linux-intel64/ampl'
     GAMS_PATH = '/opt/gams/gams42.3_linux_x64_64_sfx/gams'
-    AVAILABLE_SOLVERS =  ['alphaecp','baron', 'octeract']  # NOTE: Also look at `__update_solver_dict()` method when updating this
+    AVAILABLE_SOLVERS =  ['alphaecp','baron','octeract','knitro']  # NOTE: Also look at `__update_solver_dict()` method when updating this
     AVAILABLE_MODELS = {1: 'm1_basic.R', 2: 'm2_basic2_v2.R', 3: 'm3_descrete_segment.R', 4: 'm4_parallel_links.R'}
     TMUX_UNIQUE_PREFIX = f'AR_NC_{os.getpid()}_'  # AR = Auto Run, NC = Network Cost
 
@@ -1179,7 +1333,14 @@ class AutoExecutorSettings:
                 engine_path='./octeract-engine-4.0.0/bin/octeract-engine',
                 engine_options=f'options octeract_options "num_cores={self.r_cpu_cores_per_solver}";',
                 threads=self.r_cpu_cores_per_solver
-            )
+            ),
+            'knitro': SolverOutputAnalyzerKnitro(
+                engine_path='./ampl.linux-intel64/knitro',
+                engine_options=f'option knitro_options "threads={self.r_cpu_cores_per_solver}'
+                               f' feastol = 1.0e-7 feastol_abs = 1.0e-7 ms_enable = 1 ms_maxsolves = 100000 '
+                               f'ms_maxtime_real = {timeoption}";',
+                threads=self.r_cpu_cores_per_solver
+            ),
         }
 
     def set_execution_time_limit(self, hours: int = None, minutes: int = None, seconds: int = None) -> None:
