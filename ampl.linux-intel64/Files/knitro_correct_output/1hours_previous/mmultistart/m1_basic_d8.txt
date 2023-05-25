@@ -1,0 +1,25 @@
+Environment: User provided options:
+  problem_file = foo
+  ampl = 1
+Environment: End of user provided options.
+
+MultiStart: Minotaur version 0.3 patch 0 git revision v0.3-91-gfd2ea20
+MultiStart: Multistart NLP-based branch-and-bound solver for nonconvex MINLP
+Environment: User provided options:
+  presolve = 0
+  log_level = 6
+  eval_within_bnds = 1
+Environment: End of user provided options.
+
+Checking SOS information 
+Number of SOS constraints = 0
+Number of SOS nonzeros = 0
+AMPLInterface: problem type is NLP
+Solver: time used in reading instance = 0.00
+MultiStart: objective sense: minimize
+MultiStart: engine used = IPOPT
+MultiStart: brancher used = MaxVioBrancher
+BranchAndBound: starting branch-and-bound
+error running /home/manal/Downloads/MTP/minotaur/build/bin/mmultistart:
+	termination code 139; core file written
+<BREAK>

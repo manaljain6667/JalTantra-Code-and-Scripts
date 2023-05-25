@@ -78,5 +78,7 @@ cons3(arcs(nodes,j)).. h(nodes)-h(j)=e=sum(pipes,(((q1(arcs)*0.001)**1.852 - (q2
 cons4(arcs(nodes,j)).. sum(pipes,l(arcs,pipes)) =e=Len(arcs);
 cons5(src)..  h(src)=e= sum(srcs,E(srcs));
 cons6(arcs(nodes,j)).. q1(arcs)*q2(arcs) =l= q_M*qm;
+
 model m1  /all/  ;
-solve m1 using dnlp minimizing z ;
+m1.optfile = 1;
+solve m1 using minlp minimizing z ;

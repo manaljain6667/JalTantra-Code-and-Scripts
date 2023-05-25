@@ -1,0 +1,70 @@
+Environment: User provided options:
+  problem_file = foo
+  ampl = 1
+Environment: End of user provided options.
+
+MultiStart: Minotaur version 0.3 patch 0 git revision v0.3-91-gfd2ea20
+MultiStart: Multistart NLP-based branch-and-bound solver for nonconvex MINLP
+Environment: User provided options:
+  presolve = 0
+  log_level = 6
+  eval_within_bnds = 1
+Environment: End of user provided options.
+
+Checking SOS information 
+Number of SOS constraints = 0
+Number of SOS nonzeros = 0
+AMPLInterface: problem type is NLP
+Solver: time used in reading instance = 0.00
+MultiStart: objective sense: minimize
+MultiStart: engine used = IPOPT
+MultiStart: brancher used = MaxVioBrancher
+BranchAndBound: starting branch-and-bound
+
+******************************************************************************
+This program contains Ipopt, a library for large-scale nonlinear optimization.
+ Ipopt is released as open source code under the Eclipse Public License (EPL).
+         For more information visit https://github.com/coin-or/Ipopt
+******************************************************************************
+
+IpoptEngine: restoration failed, assuming local infeasible.
+IpoptEngine: restoration failed, assuming local infeasible.
+IpoptEngine: restoration failed, assuming local infeasible.
+IpoptEngine: restoration failed, assuming local infeasible.
+BranchAndBound: stopping branch-and-bound
+BranchAndBound: nodes processed = 1
+BranchAndBound: nodes created   = 1
+BranchAndBound: time taken      = 1.67
+BranchAndBound: nodes processed = 1
+BranchAndBound: nodes created   = 1
+MsProcessor: nodes processed     = 1
+MsProcessor: nodes branched      = 0
+MsProcessor: nodes infeasible    = 1
+MsProcessor: nodes optimal       = 0
+MsProcessor: nodes hit ub        = 0
+MsProcessor: nodes with problems = 0
+MaxVio brancher: times called = 0
+MaxVio brancher: time in brancher = 0.00
+SolutionPool: Number of solutions found = 0
+SolutionPool: Time first solution found = -1.00
+SolutionPool: Time best solution found  = -1.00
+Ipopt: total calls            = 0
+Ipopt: calls to Optimize      = 0
+Ipopt: calls to ReOptimize    = 0
+Ipopt: strong branching calls = 0
+Ipopt: total time in solving  = 0.00
+Ipopt: total time in presolve = 0.00
+Ipopt: time in str branching  = 0.00
+Ipopt: total iterations       = 0
+Ipopt: strong br iterations   = 0
+ 
+MultiStart: best solution value = inf
+MultiStart: best bound estimate from remaining nodes = inf
+MultiStart: gap = 0.0000
+MultiStart: gap percentage = inf
+MultiStart: time used (s) = 1.67
+MultiStart: status of branch-and-bound: Detected infeasibility
+MultiStart: wall clock time used (s) = 1.62
+ 
+
+syntax error

@@ -89,5 +89,5 @@ cons4(arcs(nodes,j)).. sum(pipes,l(arcs,pipes)) =e=Len(arcs);
 cons5(src)..  h(src)=e= sum(srcs,E(srcs));
 
 model m1  /all/  ;
-solve m1 using dnlp minimizing z ;
-
+m1.optfile = 1;
+solve m1 using minlp minimizing z ;

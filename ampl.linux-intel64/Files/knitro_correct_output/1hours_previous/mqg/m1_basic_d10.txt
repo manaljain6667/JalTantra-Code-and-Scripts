@@ -1,0 +1,31 @@
+Environment: User provided options:
+  problem_file = /tmp/at15067
+  ampl = 1
+Environment: End of user provided options.
+
+QG: Minotaur version 0.3 patch 0 git revision v0.3-91-gfd2ea20
+QG: Quesada-Grossmann (LP/NLP) algorithm for convex MINLP
+Environment: User provided options:
+  presolve = 0
+  log_level = 6
+  eval_within_bnds = 1
+Environment: End of user provided options.
+
+Checking SOS information 
+Number of SOS constraints = 0
+Number of SOS nonzeros = 0
+AMPLInterface: problem type is NLP
+Solver: time used in reading instance = 0.01
+QG: objective sense: minimize
+QG: handlers used:
+QG: LinearHandler (Handling linear constraints)
+QG: IntVarHandler (Handling integrality of variables).
+QG: QG Handler (Quesada-Grossmann)
+QG: brancher used = ReliabilityBrancher
+BranchAndBound: starting branch-and-bound
+QGHandler: NLP engine status at root= 11
+QGHandler: NLP engine status = EngineError
+QGHandler: No cut generated, may cycle!
+error running /home/manal/Downloads/MTP/minotaur/build/bin/mqg:
+	termination code 139; core file written
+<BREAK>

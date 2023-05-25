@@ -1,0 +1,127 @@
+Environment: User provided options:
+  problem_file = /tmp/at65831
+  ampl = 1
+Environment: End of user provided options.
+
+Bnb: Minotaur version 0.3 patch 0 git revision v0.3-91-gfd2ea20
+Bnb: NLP based Branch-and-bound algorithm for convex MINLP
+Environment: User provided options:
+  presolve = 1
+  log_level = 6
+  eval_within_bnds = 1
+Environment: End of user provided options.
+
+Checking SOS information 
+Number of SOS constraints = 0
+Number of SOS nonzeros = 0
+AMPLInterface: problem type is NLP
+Solver: time used in reading instance = 0.00
+Bnb: objective sense: minimize
+Bnb: handlers used in presolve:
+Bnb: LinearHandler (Handling linear constraints)
+Bnb: NlPresHandler (presolving nonlinear constraints).
+Presolver: Presolving ... 
+Presolver: major iteration 0
+NlPresHandler: starting presolve iter 0
+Presolver: Finished presolving.
+LinearHandler: Statistics for presolve by Linear Handler:
+LinearHandler: Number of iterations           = 6
+LinearHandler: Time taken in initial presolve = 0.00
+LinearHandler: Time taken in node presolves   = 0.00
+LinearHandler: Number of variables deleted    = 0
+LinearHandler: Number of constraints deleted  = 0
+LinearHandler: Number of vars set to binary   = 0
+LinearHandler: Number of vars set to integer  = 0
+LinearHandler: Times variables tightened      = 121
+LinearHandler: Times constraints tightened    = 0
+LinearHandler: Times coefficients improved    = 0
+LinearHandler: Times binary variable relaxed  = 0
+LinearHandler: Changes in nodes               = 0
+NlPresHandler: Statistics for presolve by NlPresHandler:
+NlPresHandler: Number of iterations           = 1
+NlPresHandler: Time taken in initial presolve = 0.00
+NlPresHandler: Time taken in node presolves   = 0.00
+NlPresHandler: Number of variables deleted    = 0
+NlPresHandler: Number of constraints deleted  = 0
+NlPresHandler: Number of constraints relaxed  = 0
+NlPresHandler: Number of perspective reform.  = 0
+NlPresHandler: Times variables tightened      = 0
+NlPresHandler: Times constraints tightened    = 0
+NlPresHandler: Times coefficients improved    = 0
+NlPresHandler: Times quad. changed to conic   = 0
+NlPresHandler: Changes in nodes               = 0
+Presolver: Modifying debug solution.
+Bnb: engine used = Filter-SQP
+Bnb: setting reliability threshhold to 2
+Bnb: setting reliability maxdepth to 2
+Bnb: reliability branching iteration limit = 5
+Bnb: brancher used = ReliabilityBrancher
+BranchAndBound: starting branch-and-bound
+PCBProcessor: engine reports error, pruning node 0
+BranchAndBound: stopping branch-and-bound
+BranchAndBound: nodes processed = 1
+BranchAndBound: nodes created   = 1
+BranchAndBound: time taken      = 0.03
+BranchAndBound: nodes processed = 1
+BranchAndBound: nodes created   = 1
+PCBProcessor: nodes processed                       = 1
+PCBProcessor: nodes branched                        = 0
+PCBProcessor: nodes infeasible                      = 1
+PCBProcessor: nodes optimal                         = 0
+PCBProcessor: nodes hit ub                          = 0
+PCBProcessor: nodes with problems                   = 1
+PCBProcessor: nodes for which fixNodeErr was called = 0
+reliability brancher: times called                = 0
+reliability brancher: no. of problems in engine   = 0
+reliability brancher: times relaxation solved     = 0
+reliability brancher: times bounds changed        = 0
+reliability brancher: time in solving relaxations = 0.00
+SolutionPool: Number of solutions found = 0
+SolutionPool: Time first solution found = -1.00
+SolutionPool: Time best solution found  = -1.00
+FilterSQPEngine: total calls            = 1
+FilterSQPEngine: strong branching calls = 0
+FilterSQPEngine: total time in solving  = 0.01
+FilterSQPEngine: time in str branching  = 0.00
+FilterSQPEngine: total iterations       = 0
+FilterSQPEngine: strong br iterations   = 0
+RCHandler: Number of times lower bound changed = 0
+RCHandler: Number of times upper bound changed = 0
+RCHandler: Time used = 0.00
+LinearHandler: Statistics for presolve by Linear Handler:
+LinearHandler: Number of iterations           = 0
+LinearHandler: Time taken in initial presolve = 0.00
+LinearHandler: Time taken in node presolves   = 0.00
+LinearHandler: Number of variables deleted    = 0
+LinearHandler: Number of constraints deleted  = 0
+LinearHandler: Number of vars set to binary   = 0
+LinearHandler: Number of vars set to integer  = 0
+LinearHandler: Times variables tightened      = 0
+LinearHandler: Times constraints tightened    = 0
+LinearHandler: Times coefficients improved    = 0
+LinearHandler: Times binary variable relaxed  = 0
+LinearHandler: Changes in nodes               = 0
+NlPresHandler: Statistics for presolve by NlPresHandler:
+NlPresHandler: Number of iterations           = 0
+NlPresHandler: Time taken in initial presolve = 0.00
+NlPresHandler: Time taken in node presolves   = 0.00
+NlPresHandler: Number of variables deleted    = 0
+NlPresHandler: Number of constraints deleted  = 0
+NlPresHandler: Number of constraints relaxed  = 0
+NlPresHandler: Number of perspective reform.  = 0
+NlPresHandler: Times variables tightened      = 0
+NlPresHandler: Times constraints tightened    = 0
+NlPresHandler: Times coefficients improved    = 0
+NlPresHandler: Times quad. changed to conic   = 0
+NlPresHandler: Changes in nodes               = 0
+ 
+Bnb: best solution value = inf
+Bnb: best bound estimate from remaining nodes = inf
+Bnb: gap = 0.0000
+Bnb: gap percentage = inf
+Bnb: time used (s) = 0.04
+Bnb: status of branch-and-bound = Detected infeasibility
+filterSQP: version 20010817
+ STOP: IEEE exception could not be resolved
+
+syntax error

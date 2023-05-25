@@ -1,0 +1,22 @@
+Environment: User provided options:
+  problem_file = /tmp/at15852
+  ampl = 1
+Environment: End of user provided options.
+
+qgpar main: Minotaur version 0.3 patch 0 git revision v0.3-91-gfd2ea20
+qgpar main: Parallel Advanced Quesada-Grossmann (LP/NLP) algorithm for convex MINLP
+AMPLInterface: problem type is NLP
+qgpar main: time used in reading instance (s) = 0.00
+qgpar main: objective sense: minimize
+Presolver: Presolving ... 
+Presolver: Finished presolving.
+qgpar main: status of presolve: Detected infeasibility
+ 
+qgpar main: best solution value = inf
+qgpar main: best bound estimate from remaining nodes = inf
+qgpar main: gap = inf
+qgpar main: gap percentage = inf
+qgpar main: time used (s) = 0.01
+qgpar main: status of branch-and-bound: Not started
+
+syntax error

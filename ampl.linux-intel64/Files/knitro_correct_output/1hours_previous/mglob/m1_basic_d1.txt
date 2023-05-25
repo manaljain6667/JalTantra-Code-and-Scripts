@@ -1,0 +1,22 @@
+Environment: User provided options:
+  problem_file = /tmp/at15657
+  ampl = 1
+Environment: End of user provided options.
+
+mntr-glob: Minotaur version 0.3 patch 0 git revision v0.3-91-gfd2ea20
+mntr-glob: global optimization for nonconvex QCQP
+Environment: User provided options:
+  presolve = 0
+  log_level = 6
+  eval_within_bnds = 1
+Environment: End of user provided options.
+
+Checking SOS information 
+Number of SOS constraints = 0
+Number of SOS nonzeros = 0
+AMPLInterface: problem type is NLP
+Solver: time used in reading instance = 0.00
+mglob error : mglob only solves Mixed Integer Quadratically Constrained Quadratic problems (MIQCQP). /tmp/at15657 is not an MIQCQP.
+Problem not solved
+Error executing "solve" command:
+can't open /tmp/at15657.sol

@@ -12,6 +12,7 @@ import sys
 import time
 import traceback
 import shutil
+import sqlite3
 from typing import List, Tuple, Union, Dict, Optional
 
 from rich.logging import RichHandler as rich_RichHandler
@@ -61,6 +62,7 @@ g_STD_OUT_ERR_TO_TERMINAL = (sys.stdout.isatty() and sys.stderr.isatty())
 g_BASH_PATH = subprocess.check_output(['which', 'bash'], shell=False).decode().strip()
 
 global_execution_time = 300
+
 
 def run_command(cmd: str, default_result: str = '', debug_print: bool = False) -> Tuple[bool, str]:
     """Execute `cmd` using bash
@@ -134,6 +136,40 @@ def run_command_get_output(cmd: str, default_result: str = '0', debug_print: boo
 
 
 # ---
+
+def setup_database():
+    # Connect to the database
+    global cursor
+    connection = sqlite3.connect('networks.db')
+    cursor = connection.cursor()
+
+    # Create the table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS best_solves (
+            hash_id TEXT,
+            solve_time INTEGER,
+            best_cost DECIMAL(10,2),
+            best_solver TEXT,
+            best_model TEXT,
+            PRIMARY KEY (hash_id, solve_time)
+        )
+    ''')
+    cursor.execute('''
+            CREATE TABLE IF NOT EXISTS all_solves (
+                hash_id TEXT,
+                solve_time INTEGER,
+                knitro_m1_cost DECIMAL(10,2),
+                knitro_m2_cost DECIMAL(10,2), 
+                baron_m1_cost DECIMAL(10,2),
+                baron_m2_cost DECIMAL(10,2),
+                alphaecp_m1_cost DECIMAL(10,2),
+                alphaecp_m2_cost DECIMAL(10,2)
+            )
+        ''')
+    # Commit the changes and close the connection
+    connection.commit()
+    g_logger.info("Database connected successfully")
+
 
 def delete_last_lines(n=1):
     """Delete `n` number of lines from stdout. NOTE: This works only if stdout is mapped to a TTY."""
@@ -488,6 +524,7 @@ class SolverOutputAnalyzerBaron(SolverOutputAnalyzerParent):
         # noinspection PyUnreachableCode
         return False, file_to_parse, objective_value, 'FIXME: Unhandled unknown case'
 
+
 class SolverOutputAnalyzerKnitro(SolverOutputAnalyzerParent):
     pass
     r"""
@@ -661,7 +698,7 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
     def __alphaecp_extract_output_table(self, std_out_err_file_path: str) -> str:
         return run_command_get_output(f"bash output_table_extractor_baron.sh '{std_out_err_file_path}'", '')
 
-    def gams_to_ampl_parser_m1(self,gams_file_path, output_file_path):
+    def gams_to_ampl_parser_m1(self, gams_file_path, output_file_path):
 
         try:
             gams_file_text = open(gams_file_path, 'r').read()
@@ -773,7 +810,7 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
             g_logger.error(f'CHECKME: {type(e)}, error:\n{e}')
             g_logger.info("There was some error while parsing the gams output file")
 
-    def gams_to_ampl_parser_m2(self,gams_file_path, output_file_path):
+    def gams_to_ampl_parser_m2(self, gams_file_path, output_file_path):
         gams_file_text = open(gams_file_path, 'r').read()
         output_file_txt = open(output_file_path, 'w')
 
@@ -902,7 +939,8 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
         output_file_txt.write(f'_total_solve_time = {total_execution_time}\n\n')
 
         # **** OBJECTIVE VALUE
-        best_solution = re.search(r"\*\*\*\* OBJECTIVE VALUE\s+([0-9]+\.[0-9]+)", gams_file_text, re.M).group(1)  # if there is no value then 'NoneType' object has no attribute 'group'
+        best_solution = re.search(r"\*\*\*\* OBJECTIVE VALUE\s+([0-9]+\.[0-9]+)", gams_file_text, re.M).group(
+            1)  # if there is no value then 'NoneType' object has no attribute 'group'
         output_file_txt.write(f'total_cost = {best_solution}')
 
     def check_errors(self, exec_info: 'NetworkExecutionInformation') -> Tuple[bool, str]:
@@ -931,20 +969,20 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
             os.replace(copy_source_file, destination_address)
             g_logger.info(f'gams output has been moved. os.replace({copy_source_file}, {destination_address})')
 
-            gams_output_file = open(destination_address,'r').read()
+            gams_output_file = open(destination_address, 'r').read()
 
             gams_licensing_error = re.search(r"Terminated due to a licensing error", gams_output_file)
             if gams_licensing_error:
-                return False,"Terminated due to licensing error"
+                return False, "Terminated due to licensing error"
 
             solver_status = re.search(r"SOLVER STATUS\s+(\d+)", gams_output_file).group(1)
 
             model_status = re.search(r"MODEL STATUS\s+(\d+)", gams_output_file).group(1)
 
             if model_status == 4:
-                return False,"Solution was infeasible"
+                return False, "Solution was infeasible"
             if model_status == 13:
-                return False,"An error occurred and no solution has been returned"
+                return False, "An error occurred and no solution has been returned"
 
             g_logger.info(f'{destination_address} Solver status : {solver_status}')
 
@@ -964,11 +1002,11 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
 
             copy_source_file_path = f'{output_file_directory}/{copy_source_file}'
             if model_name == 'm1':
-                self.gams_to_ampl_parser_m1(copy_source_file_path,current_std_error)
+                self.gams_to_ampl_parser_m1(copy_source_file_path, current_std_error)
             else:
                 self.gams_to_ampl_parser_m2(copy_source_file_path, current_std_error)
 
-        #     delete the .lst file after processing for 1 hr
+            #     delete the .lst file after processing for 1 hr
             if prefix == '1hour':
                 try:
                     os.remove(source_file)
@@ -1000,7 +1038,8 @@ class SolverOutputAnalyzerAlphaecp(SolverOutputAnalyzerParent):
             return ok, best_solution
         except Exception as e:
             g_logger.error(f'CHECKME: {type(e)}, error:\n{e}')
-            g_logger.debug('Probably, alphaecp did not terminate immediately even after receiving the appropriate signal')
+            g_logger.debug(
+                'Probably, alphaecp did not terminate immediately even after receiving the appropriate signal')
 
         g_logger.info('Using fallback mechanism to extract the best solution')
 
@@ -1242,11 +1281,11 @@ class NetworkExecutionInformation:
         self.models_dir: str = aes.models_dir
         self.data_file_path: str = aes.data_file_path
         self.data_file_hash: str = aes.data_file_hash
-        self.execution_time_limit=aes.r_execution_time_limit
+        self.execution_time_limit = aes.r_execution_time_limit
         self.engine_path: str = aes.solvers[self.solver_name].engine_path
         self.engine_options: str = aes.solvers[self.solver_name].engine_options
         self.output_dir_level_0 = aes.OUTPUT_DIR_LEVEL_0
-        self.output_dir_level_1_network_specific=aes.output_dir_level_1_network_specific
+        self.output_dir_level_1_network_specific = aes.output_dir_level_1_network_specific
         self.uniq_exec_output_dir: pathlib.Path = \
             pathlib.Path(aes.output_dir_level_1_network_specific) / self.short_uniq_combination
 
@@ -1267,9 +1306,6 @@ class NetworkExecutionInformation:
 # ---
 
 
-
-
-
 class AutoExecutorSettings:
     # Level 0 is main directory inside which everything will exist
     OUTPUT_DIR_LEVEL_0 = './NetworkResults/'.rstrip('/')  # Note: Do not put trailing forward slash ('/')
@@ -1278,7 +1314,8 @@ class AutoExecutorSettings:
     # is done because this will be executed in a fashion similar to `./a.out`
     AMPL_PATH = './ampl.linux-intel64/ampl'
     GAMS_PATH = '/opt/gams/gams42.3_linux_x64_64_sfx/gams'
-    AVAILABLE_SOLVERS =  ['alphaecp','baron','octeract','knitro']  # NOTE: Also look at `__update_solver_dict()` method when updating this
+    AVAILABLE_SOLVERS = ['alphaecp', 'baron', 'octeract',
+                         'knitro']  # NOTE: Also look at `__update_solver_dict()` method when updating this
     AVAILABLE_MODELS = {1: 'm1_basic.R', 2: 'm2_basic2_v2.R', 3: 'm3_descrete_segment.R', 4: 'm4_parallel_links.R'}
     TMUX_UNIQUE_PREFIX = f'AR_NC_{os.getpid()}_'  # AR = Auto Run, NC = Network Cost
 
@@ -1291,7 +1328,7 @@ class AutoExecutorSettings:
         self.r_execution_time_limit = (0 * 60 * 60) + (5 * 60) + 0
         self.r_min_free_ram = 2  # GiB
         self.r_min_free_swap = 8  # GiB, usefulness of this variable depends on the swappiness of the system
-        self.prefix=''
+        self.prefix = ''
         self.models_dir = "./Files/Models"  # m1, m3 => q   ,   m2, m4 => q1, q2
         self.solvers: Dict[str, SolverOutputAnalyzerParent] = {}
 
@@ -1307,18 +1344,16 @@ class AutoExecutorSettings:
 
         self.__update_solver_dict()
 
-
-
     def __update_solver_dict(self):
         # NOTE: Update `AutoExecutorSettings.AVAILABLE_SOLVERS` if keys in below dictionary are updated
         # NOTE: Use double quotes ONLY in the below variables
-        timeoption=self.r_execution_time_limit-30
+        timeoption = self.r_execution_time_limit - 20
 
-        fileHash=self.data_file_hash
+        fileHash = self.data_file_hash
 
-        gams_output_file = self.output_dir_level_1_network_specific+"/alphaecp_m1_"+fileHash
+        gams_output_file = self.output_dir_level_1_network_specific + "/alphaecp_m1_" + fileHash
         self.solvers = {
-            'alphaecp' : SolverOutputAnalyzerAlphaecp(
+            'alphaecp': SolverOutputAnalyzerAlphaecp(
                 engine_path=f'{gams_output_file}',
                 engine_options=f'"reslim={timeoption}"',
                 threads=self.r_cpu_cores_per_solver
@@ -1351,6 +1386,7 @@ class AutoExecutorSettings:
         minutes = 0 if minutes is None else minutes
         seconds = 0 if seconds is None else seconds
         self.r_execution_time_limit = (hours * 60 * 60) + (minutes * 60) + seconds
+        self.r_execution_time_limit = self.r_execution_time_limit - 10
         self.__update_solver_dict()
 
     def set_cpu_cores_per_solver(self, n: int) -> None:
@@ -1363,7 +1399,7 @@ class AutoExecutorSettings:
         self.output_dir_level_1_network_specific = f'{AutoExecutorSettings.OUTPUT_DIR_LEVEL_0}' \
                                                    f'/{self.data_file_hash}'
         self.prefix = prefix
-        self.output_dir_level_1_network_specific = self.output_dir_level_1_network_specific+prefix
+        self.output_dir_level_1_network_specific = self.output_dir_level_1_network_specific + prefix
         self.output_network_specific_result = self.output_dir_level_1_network_specific + '/0_result.txt'
         self.output_result_summary_file = self.output_dir_level_1_network_specific + '/0_result_summary.txt'
 
@@ -1433,7 +1469,7 @@ echo > /dev/null
             info.tmux_bash_pid = 0
         return info
 
-    def start_solver_gams(self, idx:int) -> NetworkExecutionInformation:
+    def start_solver_gams(self, idx: int) -> NetworkExecutionInformation:
         """
         Launch the solver using `tmux` and `gams` in background (i.e. asynchronously / non-blocking)
 
@@ -1453,14 +1489,14 @@ echo > /dev/null
 
         data_file = info.data_file_path
 
-        data_file_name = data_file.replace(".R","")
+        data_file_name = data_file.replace(".R", "")
 
         if idx == 0:
-            data_file_name = data_file_name+'m1.gms'
+            data_file_name = data_file_name + 'm1.gms'
         if idx == 1:
-            data_file_name = data_file_name+'m2.gms'
+            data_file_name = data_file_name + 'm2.gms'
 
-        time_option = info.execution_time_limit - 30
+        time_option = info.execution_time_limit - 20
 
         info.uniq_exec_output_dir.mkdir(exist_ok=True)
         if not info.uniq_exec_output_dir.exists():
@@ -1567,6 +1603,7 @@ def check_solution_status(tmux_monitor_list: List[NetworkExecutionInformation]) 
 
 
 def extract_best_solution(
+        my_settings: AutoExecutorSettings,
         tmux_monitor_list: List[NetworkExecutionInformation],
         result_summary_file_path: str
 ) -> Tuple[bool, float, Optional[NetworkExecutionInformation]]:
@@ -1579,6 +1616,7 @@ def extract_best_solution(
     """
     all_results: List = list()  # Only used for debugging
     best_result_till_now, best_result_exec_info = float('inf'), None
+    solver_results = {}
     for exec_info in tmux_monitor_list:
         ok, curr_res = exec_info.solver_info.extract_best_solution(exec_info)
         all_results.append((exec_info.solver_name, exec_info.short_uniq_model_name, ok, curr_res))
@@ -1589,12 +1627,38 @@ def extract_best_solution(
         g_logger.debug(f'Update best result seen till now: {curr_res} < {best_result_till_now=}')
         best_result_till_now = curr_res
         best_result_exec_info = exec_info
+
     for (solver_name, model_name, ok, res) in all_results:
         g_logger.info(f'solver={solver_name}, model={model_name}, {ok=}, {res=}')
         run_command(f"echo 'solver={solver_name}, model={model_name}, {ok=}, {res=}'"
                     f" >> '{result_summary_file_path}'")
+        if ok:
+            solver_results[solver_name + "_" + model_name] = res
+        else:
+            solver_results[solver_name + "_" + model_name] = float('inf')
+    update_all_solves_table(my_settings, solver_results)
+
     return best_result_exec_info is not None, best_result_till_now, best_result_exec_info
 
+
+def update_all_solves_table(
+        my_settings: AutoExecutorSettings,
+        solver_results: dict()
+) -> None:
+    hash_id = my_settings.data_file_hash
+    time_limit = my_settings.r_execution_time_limit
+    knitro_m1_cost = solver_results["knitro_m1"]
+    knitro_m2_cost = solver_results["knitro_m2"]
+    baron_m1_cost = solver_results["baron_m1"]
+    baron_m2_cost = solver_results["baron_m2"]
+    alphaecp_m1_cost = solver_results["alphaecp_m1"]
+    alphaecp_m2_cost = solver_results["alphaecp_m2"]
+    cursor.execute("INSERT OR REPLACE INTO all_solves (hash_id, solve_time,  knitro_m1_cost, knitro_m2_cost, "
+                   "baron_m1_cost, baron_m2_cost, alphaecp_m1_cost, alphaecp_m2_cost) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                   (hash_id, time_limit, knitro_m1_cost, knitro_m2_cost, baron_m1_cost, baron_m2_cost,
+                    alphaecp_m1_cost, alphaecp_m2_cost))
+    # Commit the changes
+    cursor.connection.commit()
 
 # ---
 
@@ -1715,6 +1779,7 @@ def main_start_first_batch(
     del i, exec_info
     g_logger.info('FINISHED: Execution of first batch of solvers')
 
+
 def main_start_first_batch_gams(
         my_settings: AutoExecutorSettings,
         tmux_original_list: List[NetworkExecutionInformation],
@@ -1723,22 +1788,21 @@ def main_start_first_batch_gams(
     g_logger.info('START: Execution of first batch of gams solvers')
     run_command(f"echo 'running' > {my_settings.output_dir_level_1_network_specific}/0_status")
 
-    exec_info = my_settings.start_solver_gams('m1',my_settings)
+    exec_info = my_settings.start_solver_gams('m1', my_settings)
     g_logger.debug(str(exec_info))
     g_logger.debug(f'{exec_info.tmux_bash_pid=}')
     if exec_info.tmux_bash_pid == '0':
         g_logger.error('FIXME: exec_info.tmux_bash_pid is 0')
-    else :
+    else:
         tmux_original_list.append(exec_info)
         tmux_monitor_list.append(exec_info)
         g_logger.info(f'tmux session "{exec_info.short_uniq_combination}" -> {exec_info.tmux_bash_pid}')
         time.sleep(0.2)
         g_logger.debug(f'{len(tmux_monitor_list)=}')
 
-
-
     del exec_info
     g_logger.info('FINISHED: Execution of first batch of gams solvers')
+
 
 def main_error_checking_round_1(tmux_monitor_list: List[NetworkExecutionInformation],
                                 tmux_finished_list: List[NetworkExecutionInformation]) -> None:
@@ -1973,7 +2037,7 @@ def main_extract_best_solution_among_all(
     g_logger.info('START: Extracting best solution among all solver-model instances')
     g_logger.debug(f'{len(tmux_monitor_list)=}')
     g_logger.debug(f'{len(tmux_finished_list)=}')
-    status, best_cost, best_cost_instance_exec_info = extract_best_solution(tmux_original_list,
+    status, best_cost, best_cost_instance_exec_info = extract_best_solution(my_settings, tmux_original_list,
                                                                             my_settings.output_result_summary_file)
     g_logger.debug((status, best_cost, str(best_cost_instance_exec_info)))
     g_logger.info('FINISHED: Extracting best solution among all solver-model instances')
@@ -2069,8 +2133,29 @@ def main_write_final_solution(
     # run_command(f"echo '{objective_value}' >> '{my_settings.output_network_specific_result}'")  # Line 7
     # run_command(f"echo '{solution_vector}' >> '{my_settings.output_network_specific_result}'")  # Line 8+
 
+    # Finally update the database regarding the best solution
+    update_best_solves_table(my_settings, best_cost, best_cost_instance_exec_info)
+
 
 # ---
+def update_best_solves_table(
+        my_settings: AutoExecutorSettings,
+        best_cost: float,
+        best_cost_instance_exec_info: NetworkExecutionInformation
+) -> None:
+    time_limit = my_settings.r_execution_time_limit
+    hash_id = my_settings.data_file_hash
+    best_solver = best_cost_instance_exec_info.solver_name
+    best_model = best_cost_instance_exec_info.short_uniq_model_name
+    # Insert values into the solves table
+    cursor.execute(
+        "INSERT OR REPLACE INTO best_solves (hash_id, solve_time, best_cost, best_solver, best_model ) "
+        "VALUES (?, ?, ?, ?, ?)",
+        (hash_id, time_limit, best_cost, best_solver, best_model))
+    # Commit the changes
+    cursor.connection.commit()
+    cursor.connection.close()
+
 
 def update_settings(args: argparse.Namespace) -> AutoExecutorSettings:
     """
@@ -2119,7 +2204,7 @@ def update_settings(args: argparse.Namespace) -> AutoExecutorSettings:
     g_logger.info(f"Input file hash = '{my_settings.data_file_hash}'")
 
     my_settings.set_execution_time_limit(seconds=args.time)
-    global_execution_time=args.time
+    global_execution_time = args.time
     g_logger.info(f'Solver Execution Time Limit = {my_settings.r_execution_time_limit // 60 // 60:02}:'
                   f'{(my_settings.r_execution_time_limit // 60) % 60:02}:'
                   f'{my_settings.r_execution_time_limit % 60:02}')
@@ -2387,6 +2472,7 @@ if __name__ == '__main__':
 
     args: argparse.Namespace = parse_args()
     my_settings: AutoExecutorSettings = update_settings(args)
+    setup_database()
     g_logger.info('START main program')
     try:
         main(my_settings)

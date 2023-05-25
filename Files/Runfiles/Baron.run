@@ -1,2 +1,0 @@
-option baron_options "threads=4 maxtime=300";
-solve;

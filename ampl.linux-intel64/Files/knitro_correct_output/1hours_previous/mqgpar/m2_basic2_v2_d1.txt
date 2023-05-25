@@ -1,0 +1,14 @@
+Environment: User provided options:
+  problem_file = /tmp/at15876
+  ampl = 1
+Environment: End of user provided options.
+
+qgpar main: Minotaur version 0.3 patch 0 git revision v0.3-91-gfd2ea20
+qgpar main: Parallel Advanced Quesada-Grossmann (LP/NLP) algorithm for convex MINLP
+AMPLInterface: problem type is NLP
+qgpar main: time used in reading instance (s) = 0.00
+qgpar main: objective sense: minimize
+Presolver: Presolving ... 
+Presolver: Finished presolving.
+Number of processors = 4
+Number of threads = 1
